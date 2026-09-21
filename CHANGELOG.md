@@ -1,0 +1,15 @@
+# Changelog
+
+## 0.2.0 — 2026-09-21
+
+- Added a reusable standard-library TypeSafe client with bounded retries,
+  `Retry-After` support, response validation, request limits, and redacted
+  diagnostics.
+- Added `classify`, `score`, `check`, `verify`, and deterministic `gate` MCP
+  tools while keeping the raw `evaluate` tool compatible.
+- Added a package entry point, `doctor`, standalone JSON evaluation mode, CI,
+  release metadata, and an expanded test suite.
+
+## 0.1.0
+
+- Initial dependency-free stdio MCP bridge exposing `evaluate`.

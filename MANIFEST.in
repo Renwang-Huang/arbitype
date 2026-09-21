@@ -1,0 +1,6 @@
+include README.md LICENSE SECURITY.md CHANGELOG.md BENCHMARK.md .env.example
+recursive-include typesafe_codex_mcp *.py
+recursive-include tests *.py
+global-exclude *.py[cod]
+prune __pycache__
+prune */__pycache__
