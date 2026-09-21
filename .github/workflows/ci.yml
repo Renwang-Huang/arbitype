@@ -43,7 +43,8 @@ jobs:
         run: python -m pip wheel --no-deps . --wheel-dir dist
       - name: Install wheel in a clean virtual environment
         run: |
-          python -m venv /tmp/typesafe-codex-mcp-venv
-          /tmp/typesafe-codex-mcp-venv/bin/python -m pip install --no-deps dist/*.whl
-          /tmp/typesafe-codex-mcp-venv/bin/typesafe-codex-mcp --version
-          printf '%s\n' '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18"}}' '{"jsonrpc":"2.0","id":2,"method":"shutdown","params":{}}' '{"jsonrpc":"2.0","method":"exit"}' | /tmp/typesafe-codex-mcp-venv/bin/typesafe-codex-mcp
+          python -m venv /tmp/typesafe-mcp-venv
+          /tmp/typesafe-mcp-venv/bin/python -m pip install --no-deps dist/*.whl
+          /tmp/typesafe-mcp-venv/bin/typesafe-mcp --version
+          /tmp/typesafe-mcp-venv/bin/typesafe-codex-mcp --version
+          printf '%s\n' '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18"}}' '{"jsonrpc":"2.0","id":2,"method":"shutdown","params":{}}' '{"jsonrpc":"2.0","method":"exit"}' | /tmp/typesafe-mcp-venv/bin/typesafe-mcp

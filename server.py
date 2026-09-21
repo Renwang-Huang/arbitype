@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""Backward-compatible launcher for the TypeSafe Codex MCP bridge.
+"""Backward-compatible launcher for the TypeSafe MCP bridge.
 
-Keep this file because existing Codex configurations point at it. New
-installations can use ``typesafe-codex-mcp`` or ``python -m typesafe_codex_mcp``.
+Keep this file because existing MCP configurations point at it. New
+installations can use ``typesafe-mcp`` or ``python -m typesafe_mcp``.
 """
 
-from typesafe_codex_mcp.cli import main
-from typesafe_codex_mcp.core import (
+from typesafe_mcp.cli import main
+from typesafe_mcp.core import (
     APIError,
     BridgeError,
     ConfigError,
@@ -15,7 +15,7 @@ from typesafe_codex_mcp.core import (
     post_to_typesafe as _post_to_typesafe,
     validate_request as _validate_request,
 )
-from typesafe_codex_mcp.mcp import TOOLS, call_tool, handle_message, main_stdio
+from typesafe_mcp.mcp import TOOLS, call_tool, handle_message, main_stdio
 
 __all__ = [
     "APIError",

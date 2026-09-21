@@ -13,7 +13,7 @@ from urllib.error import HTTPError, URLError
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
-from typesafe_codex_mcp import cli, core, mcp  # noqa: E402
+from typesafe_mcp import cli, core, mcp  # noqa: E402
 
 
 class RawResponse:

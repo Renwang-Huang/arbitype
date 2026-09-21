@@ -3,14 +3,14 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "typesafe-codex-mcp"
-version = "0.3.0"
-description = "A dependency-free TypeSafe AI MCP service for Codex"
+name = "typesafe-mcp"
+version = "0.4.0"
+description = "A dependency-free, host-neutral TypeSafe AI MCP service"
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
-authors = [{ name = "TypeSafe Codex MCP contributors" }]
-keywords = ["typesafe", "jev", "mcp", "codex", "ai", "classification", "guardrails"]
+authors = [{ name = "TypeSafe MCP contributors" }]
+keywords = ["typesafe", "jev", "mcp", "ai", "agents", "claude", "classification", "guardrails"]
 classifiers = [
   "Development Status :: 4 - Beta",
   "License :: OSI Approved :: MIT License",
@@ -25,16 +25,17 @@ classifiers = [
 dependencies = []
 
 [project.urls]
-Homepage = "https://github.com/Renwang-Huang/typesafe-codex-mcp"
-Repository = "https://github.com/Renwang-Huang/typesafe-codex-mcp"
-Issues = "https://github.com/Renwang-Huang/typesafe-codex-mcp/issues"
-Changelog = "https://github.com/Renwang-Huang/typesafe-codex-mcp/blob/main/CHANGELOG.md"
+Homepage = "https://github.com/Renwang-Huang/typesafe-mcp"
+Repository = "https://github.com/Renwang-Huang/typesafe-mcp"
+Issues = "https://github.com/Renwang-Huang/typesafe-mcp/issues"
+Changelog = "https://github.com/Renwang-Huang/typesafe-mcp/blob/main/CHANGELOG.md"
 
 [project.scripts]
-typesafe-codex-mcp = "typesafe_codex_mcp.cli:main"
+typesafe-mcp = "typesafe_mcp.cli:main"
+typesafe-codex-mcp = "typesafe_mcp.cli:main"
 
 [tool.setuptools.packages.find]
-include = ["typesafe_codex_mcp*"]
+include = ["typesafe_mcp*", "typesafe_codex_mcp*"]
 
 [tool.setuptools.exclude-package-data]
 "*" = ["__pycache__", "__pycache__/*", "*.py[cod]"]

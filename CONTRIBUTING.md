@@ -7,7 +7,7 @@ Before opening a pull request, run:
 ```bash
 python3 -m unittest discover -s tests -v
 python3 -m compileall -q .
-python3 -m pip wheel --no-deps . --wheel-dir /tmp/typesafe-codex-mcp-dist
+python3 -m pip wheel --no-deps . --wheel-dir /tmp/typesafe-mcp-dist
 ```
 
 Do not add API keys, live request payloads, or provider responses containing

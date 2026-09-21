@@ -1,21 +1,7 @@
-"""TypeSafe AI's dependency-free Codex/MCP bridge."""
+"""Compatibility package for the pre-0.4.0 ``typesafe_codex_mcp`` name.
 
-from .core import (
-    APIError,
-    BridgeError,
-    ConfigError,
-    Settings,
-    TypeSafeClient,
-    validate_api_response,
-    validate_request,
-)
+Use :mod:`typesafe_mcp` for new integrations. The old import path remains so
+existing applications can migrate without a synchronized upgrade.
+"""
 
-__all__ = [
-    "APIError",
-    "BridgeError",
-    "ConfigError",
-    "Settings",
-    "TypeSafeClient",
-    "validate_api_response",
-    "validate_request",
-]
+from typesafe_mcp import *  # noqa: F401,F403

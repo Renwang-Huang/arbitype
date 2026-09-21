@@ -23,22 +23,27 @@ class BuildPyWithoutBytecode(_build_py):
 
 
 setup(
-    name="typesafe-codex-mcp",
-    version="0.3.0",
-    description="A dependency-free TypeSafe AI MCP service for Codex",
+    name="typesafe-mcp",
+    version="0.4.0",
+    description="A dependency-free, host-neutral TypeSafe AI MCP service",
     long_description=open("README.md", encoding="utf-8").read(),
     long_description_content_type="text/markdown",
-    author="TypeSafe Codex MCP contributors",
+    author="TypeSafe MCP contributors",
     author_email="renwang-huang@users.noreply.github.com",
-    url="https://github.com/Renwang-Huang/typesafe-codex-mcp",
+    url="https://github.com/Renwang-Huang/typesafe-mcp",
     project_urls={
-        "Issues": "https://github.com/Renwang-Huang/typesafe-codex-mcp/issues",
-        "Changelog": "https://github.com/Renwang-Huang/typesafe-codex-mcp/blob/main/CHANGELOG.md",
+        "Issues": "https://github.com/Renwang-Huang/typesafe-mcp/issues",
+        "Changelog": "https://github.com/Renwang-Huang/typesafe-mcp/blob/main/CHANGELOG.md",
     },
     python_requires=">=3.10",
     license="MIT",
-    packages=find_packages(include=["typesafe_codex_mcp", "typesafe_codex_mcp.*"]),
+    packages=find_packages(include=["typesafe_mcp", "typesafe_mcp.*", "typesafe_codex_mcp", "typesafe_codex_mcp.*"]),
     exclude_package_data={"": ["__pycache__", "__pycache__/*", "*.py[cod]"]},
     cmdclass={"build_py": BuildPyWithoutBytecode},
-    entry_points={"console_scripts": ["typesafe-codex-mcp=typesafe_codex_mcp.cli:main"]},
+    entry_points={
+        "console_scripts": [
+            "typesafe-mcp=typesafe_mcp.cli:main",
+            "typesafe-codex-mcp=typesafe_mcp.cli:main",
+        ]
+    },
 )

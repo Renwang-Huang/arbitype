@@ -7,6 +7,6 @@ compile:
 	python3 -m compileall -q .
 
 package:
-	python3 -m pip wheel --no-deps . --wheel-dir /tmp/typesafe-codex-mcp-dist
+	python3 -m pip wheel --no-deps . --wheel-dir /tmp/typesafe-mcp-dist
 
 check: test compile package

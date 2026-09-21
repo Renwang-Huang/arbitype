@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.4.0 — 2026-09-21
+
+- Rebranded the public project as TypeSafe MCP and renamed the distribution and
+  primary CLI to `typesafe-mcp`.
+- Added the neutral `typesafe_mcp` import path and retained the old package and
+  command as compatibility aliases.
+- Renamed the advertised `route` and `review` tools so the protocol contract is
+  not tied to one agent host; the old `codex_route` and `codex_review` calls are
+  accepted as migration aliases.
+- Reworked the documentation and host guidance for Codex, Claude, Cursor, VS
+  Code, and other MCP-capable clients without adding host-specific runtime code.
+
 ## 0.3.0 — 2026-09-21
 
 - Narrowed the product contract to a Codex-first stdio MCP service.

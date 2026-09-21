@@ -1,30 +1,30 @@
-# TypeSafe Codex MCP
+# TypeSafe MCP
 
-![CI](https://github.com/Renwang-Huang/typesafe-codex-mcp/actions/workflows/ci.yml/badge.svg)
+![CI](https://github.com/Renwang-Huang/typesafe-mcp/actions/workflows/ci.yml/badge.svg)
 
-Dependency-free, Codex-first STDIO MCP service for [TypeSafe AI](https://typesafe.ai)'s
+Dependency-free, host-neutral STDIO MCP service for [TypeSafe AI](https://typesafe.ai)'s
 Jev System One API.
 
 It keeps the API key in the process environment, validates requests and
 responses, retries temporary provider failures safely, and exposes typed tools
-for Codex routing, review signals, and bounded judgments.
+for agent routing, review signals, and bounded judgments.
 
-> TypeSafe Codex MCP is an independent community project. It is not an
-> official TypeSafe AI or OpenAI product.
+> TypeSafe MCP is an independent community project. It is not an official
+> TypeSafe AI product or an official integration for any particular agent host.
 
 ## Why this bridge
 
-TypeSafe's official interface is an HTTP API. This project provides the local
-STDIO MCP adapter that Codex can start, without third-party runtime dependencies
-beyond Python 3.10+ itself.
+TypeSafe's official interface is an HTTP API. This project provides a local
+STDIO MCP adapter that any compatible agent host can start, without third-party
+runtime dependencies beyond Python 3.10+ itself.
 
 - No third-party runtime dependencies.
 - `evaluate` stays close to the official API: `noul`, `choice`, and `score`.
 - `classify`, `score`, and `check` remove repetitive question-map boilerplate.
 - `verify` batches claim checks into one request.
 - `gate` converts bounded check probabilities into `pass`, `review`, or `fail`.
-- `codex_route` selects the next action from a closed set without executing it.
-- `codex_review` evaluates a diff, plan, or test report against explicit checks.
+- `route` selects the next action from a closed set without executing it.
+- `review` evaluates a diff, plan, or test report against explicit checks.
 - `health` diagnoses local configuration without a network request by default.
 - API responses are checked for missing answers, invalid probabilities, unknown
   choices, malformed scores, and inconsistent distributions.
@@ -42,8 +42,8 @@ Probabilities and confidence are model signals, not proof. `verify` and
 ### Run from a checkout
 
 ```bash
-git clone https://github.com/Renwang-Huang/typesafe-codex-mcp.git
-cd typesafe-codex-mcp
+git clone https://github.com/Renwang-Huang/typesafe-mcp.git
+cd typesafe-mcp
 export TYPESAFE_API_KEY="your-key"
 python3 server.py
 ```
@@ -52,46 +52,54 @@ python3 server.py
 
 ```bash
 python3 -m pip install .
-typesafe-codex-mcp --version
-typesafe-codex-mcp doctor --json
+typesafe-mcp --version
+typesafe-mcp doctor --json
 ```
 
 The package has no runtime dependencies. Once published, an isolated installer
 such as `uvx` can run it directly from a pinned Git tag:
 
 ```bash
-uvx --from 'git+https://github.com/Renwang-Huang/typesafe-codex-mcp@v0.3.0' \
-  typesafe-codex-mcp
+uvx --from 'git+https://github.com/Renwang-Huang/typesafe-mcp@v0.4.0' \
+  typesafe-mcp
 ```
 
-## Codex configuration
+## MCP host configuration
 
-For a checkout, add this to `~/.codex/config.toml`:
+The service uses the standard MCP STDIO transport. Every host has its own
+configuration syntax, but the process and environment contract are the same.
+For example, a checkout can be registered in a Codex `config.toml` like this:
 
 ```toml
 [mcp_servers.typesafe]
 command = "python3"
-args = ["/absolute/path/to/typesafe-codex-mcp/server.py"]
+args = ["/absolute/path/to/typesafe-mcp/server.py"]
 env_vars = ["TYPESAFE_API_KEY"]
 startup_timeout_sec = 10
 tool_timeout_sec = 60
 default_tools_approval_mode = "prompt"
-enabled_tools = ["codex_route", "codex_review", "classify", "score", "check", "verify", "gate", "evaluate", "health"]
+enabled_tools = ["route", "review", "classify", "score", "check", "verify", "gate", "evaluate", "health"]
 ```
 
 For an installed command:
 
 ```toml
 [mcp_servers.typesafe]
-command = "typesafe-codex-mcp"
+command = "typesafe-mcp"
 env_vars = ["TYPESAFE_API_KEY"]
 startup_timeout_sec = 10
 tool_timeout_sec = 60
 default_tools_approval_mode = "prompt"
 ```
 
-Keep the key out of `config.toml`; `env_vars` asks Codex to forward the
-environment variable without putting its value in the MCP command line.
+Keep the key out of host configuration files; `env_vars` asks the host to
+forward the environment variable without putting its value in the command
+line. The same STDIO process can be registered by Claude, Cursor, VS Code, or
+another MCP host using that host's native configuration format.
+
+The old `typesafe-codex-mcp` command and `typesafe_codex_mcp` Python import are
+kept as migration aliases. Calls to `codex_route` and `codex_review` are also
+accepted, but new configurations should use `route` and `review`.
 
 ## Tools
 
@@ -103,8 +111,8 @@ environment variable without putting its value in the MCP command line.
 | `check` | `state` + yes/no `instructions` | One Noul probability |
 | `verify` | `state` + `claims` map | One Noul answer per claim |
 | `gate` | `state` + `checks` map + thresholds | `pass`, `review`, or `fail` plus evidence |
-| `codex_route` | `state` + `actions` map | Suggested next Codex action; no execution |
-| `codex_review` | `state` + `checks` map + thresholds | Codex-oriented review decision and evidence |
+| `route` | `state` + `actions` map | Suggested next action; no execution |
+| `review` | `state` + `checks` map + thresholds | Review decision and evidence |
 | `health` | Optional `live` boolean | Local configuration; live request only when explicit |
 
 Example `classify` call:
@@ -126,15 +134,15 @@ Example `classify` call:
 The MCP process is the default command. The same package can be used in CI:
 
 ```bash
-typesafe-codex-mcp doctor --json
-cat request.json | typesafe-codex-mcp evaluate
-typesafe-codex-mcp evaluate --input request.json
+typesafe-mcp doctor --json
+cat request.json | typesafe-mcp evaluate
+typesafe-mcp evaluate --input request.json
 ```
 
 The Python library is intentionally small:
 
 ```python
-from typesafe_codex_mcp import TypeSafeClient
+from typesafe_mcp import TypeSafeClient
 
 client = TypeSafeClient()
 result = client.evaluate({
@@ -169,14 +177,14 @@ result = client.evaluate({
 ```bash
 python3 -m unittest discover -s tests -v
 python3 -m compileall -q .
-python3 -m pip wheel --no-deps . --wheel-dir /tmp/typesafe-codex-mcp-dist
+python3 -m pip wheel --no-deps . --wheel-dir /tmp/typesafe-mcp-dist
 ```
 
 The test suite uses local fakes only; it never needs an API key. A live check
 is opt-in and makes one paid request:
 
 ```bash
-TYPESAFE_API_KEY="your-key" typesafe-codex-mcp doctor --live
+TYPESAFE_API_KEY="your-key" typesafe-mcp doctor --live
 ```
 
 See [SECURITY.md](SECURITY.md) before using live credentials and

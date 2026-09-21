@@ -10,7 +10,7 @@ from unittest.mock import patch
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from typesafe_codex_mcp import core, mcp  # noqa: E402
+from typesafe_mcp import core, mcp  # noqa: E402
 
 
 def route_response(choice="inspect"):
@@ -28,11 +28,12 @@ def route_response(choice="inspect"):
     }
 
 
-class CodexContractTests(unittest.TestCase):
-    def test_server_instructions_fit_codex_prefix_limit(self):
+class HostContractTests(unittest.TestCase):
+    def test_server_instructions_fit_host_prefix_limit(self):
         self.assertLessEqual(len(mcp.SERVER_INSTRUCTIONS), 512)
-        self.assertIn("Codex-first", mcp.SERVER_INSTRUCTIONS)
-        self.assertIn("codex_route", mcp.SERVER_INSTRUCTIONS)
+        self.assertIn("Host-neutral", mcp.SERVER_INSTRUCTIONS)
+        self.assertIn("route", mcp.SERVER_INSTRUCTIONS)
+        self.assertIn("review", mcp.SERVER_INSTRUCTIONS)
         self.assertIn("never edit files", mcp.SERVER_INSTRUCTIONS)
 
     def test_tools_are_read_only_and_have_structured_output_schema(self):
@@ -67,7 +68,7 @@ class CodexContractTests(unittest.TestCase):
             with self.assertRaisesRegex(core.BridgeError, "live must be a boolean"):
                 mcp.call_tool("health", {"live": "yes"})
 
-    def test_codex_route_creates_a_single_choice_question(self):
+    def test_route_creates_a_single_choice_question(self):
         class FakeClient:
             settings = core.Settings(api_key="secret")
 
@@ -81,17 +82,17 @@ class CodexContractTests(unittest.TestCase):
         fake = FakeClient()
         with patch.object(mcp, "TypeSafeClient", return_value=fake):
             result = mcp.call_tool(
-                "codex_route",
+                "route",
                 {
                     "state": "The patch changes authentication and has no test output.",
                     "actions": {"inspect": "Read the diff", "test": "Run focused tests"},
                 },
             )
-        self.assertEqual(result["type"], "codex_route")
+        self.assertEqual(result["type"], "route")
         self.assertEqual(result["route"], "inspect")
         self.assertEqual(fake.request["questions"]["next_action"]["type"], "choice")
 
-    def test_codex_review_is_a_named_gate_with_fail_closed_result(self):
+    def test_review_is_a_named_gate_with_fail_closed_result(self):
         class FakeClient:
             settings = core.Settings(api_key="secret")
 
@@ -106,12 +107,30 @@ class CodexContractTests(unittest.TestCase):
 
         with patch.object(mcp, "TypeSafeClient", return_value=FakeClient()):
             result = mcp.call_tool(
-                "codex_review",
+                "review",
                 {"state": "diff", "checks": {"tests": "Tests cover the change", "scope": "Scope is bounded"}},
             )
-        self.assertEqual(result["type"], "codex_review")
+        self.assertEqual(result["type"], "review")
         self.assertEqual(result["decision"], "fail")
         self.assertEqual(result["checks"]["tests"]["decision"], "fail")
+
+    def test_legacy_tool_aliases_are_callable_but_not_advertised(self):
+        self.assertEqual(mcp.TOOL_ALIASES, {"codex_route": "route", "codex_review": "review"})
+        self.assertNotIn("codex_route", {tool["name"] for tool in mcp.TOOLS})
+        self.assertNotIn("codex_review", {tool["name"] for tool in mcp.TOOLS})
+
+        class FakeClient:
+            settings = core.Settings(api_key="secret")
+
+            def evaluate(self, _request):
+                return route_response()
+
+        with patch.object(mcp, "TypeSafeClient", return_value=FakeClient()):
+            result = mcp.call_tool(
+                "codex_route",
+                {"state": "state", "actions": {"inspect": "Inspect", "test": "Test"}},
+            )
+        self.assertEqual(result["type"], "route")
 
     def test_unexpected_tool_errors_are_safe_mcp_results(self):
         class BrokenClient:
@@ -169,7 +188,7 @@ class StdioIntegrationTests(unittest.TestCase):
         responses = [json.loads(line) for line in completed.stdout.splitlines()]
         self.assertEqual([response["id"] for response in responses], [1, 2, 3])
         self.assertEqual(responses[0]["result"]["serverInfo"]["version"], mcp.SERVER_VERSION)
-        self.assertIn("codex_review", {tool["name"] for tool in responses[1]["result"]["tools"]})
+        self.assertIn("review", {tool["name"] for tool in responses[1]["result"]["tools"]})
         self.assertEqual(responses[2]["result"], {})
 
     def test_stdio_rejects_malformed_messages_without_tracebacks(self):
