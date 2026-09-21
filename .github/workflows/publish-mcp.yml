@@ -1,0 +1,172 @@
+name: Publish to MCP Registry
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Git ref to publish (for example, main or v0.5.2)
+        required: true
+        default: main
+        type: string
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: mcp-registry-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  SERVER_NAME: io.github.Renwang-Huang/typesafe-mcp
+  PACKAGE_NAME: typesafe-mcp
+  MCP_PUBLISHER_VERSION: v1.8.1
+  MCP_PUBLISHER_SHA256: a06c9096dcb9727c13555b6be26c7effa707b01f06a4c561ba7a3635443cf2cc
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment:
+      name: mcp-registry-publish
+      url: https://registry.modelcontextprotocol.io/?q=io.github.Renwang-Huang%2Ftypesafe-mcp
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.ref || github.ref }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+
+      - name: Resolve and validate release version
+        id: version
+        shell: bash
+        run: |
+          set -euo pipefail
+          package_version="$(python -c 'from typesafe_mcp._version import __version__; print(__version__)')"
+
+          if [[ "$GITHUB_EVENT_NAME" == "push" ]]; then
+            tag_version="${GITHUB_REF_NAME#v}"
+            if [[ "$GITHUB_REF_NAME" != v* || "$tag_version" != "$package_version" ]]; then
+              echo "Tag $GITHUB_REF_NAME does not match package version $package_version" >&2
+              exit 1
+            fi
+            version="$tag_version"
+          else
+            version="$package_version"
+          fi
+
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "Publishing version: $version"
+
+      - name: Wait for the PyPI artifact
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          package_url="https://pypi.org/pypi/${PACKAGE_NAME}/${VERSION}/json"
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent --show-error "$package_url" \
+              | jq -e --arg version "$VERSION" '.info.version == $version' >/dev/null; then
+              echo "PyPI has ${PACKAGE_NAME} ${VERSION}."
+              exit 0
+            fi
+            echo "Waiting for ${package_url} (attempt ${attempt}/30)..."
+            sleep 20
+          done
+          echo "Timed out waiting for the PyPI artifact." >&2
+          exit 1
+
+      - name: Prepare Registry metadata
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          metadata_tmp="$(mktemp)"
+          jq --arg version "$VERSION" \
+            '.version = $version | .packages |= map(.version = $version)' \
+            server.json > "$metadata_tmp"
+          mv "$metadata_tmp" server.json
+          python scripts/validate_registry_metadata.py --version "$VERSION"
+
+      - name: Install mcp-publisher
+        shell: bash
+        run: |
+          set -euo pipefail
+          asset="mcp-publisher_linux_amd64.tar.gz"
+          url="https://github.com/modelcontextprotocol/registry/releases/download/${MCP_PUBLISHER_VERSION}/${asset}"
+          curl --fail --silent --show-error --location "$url" --output mcp-publisher.tar.gz
+          echo "${MCP_PUBLISHER_SHA256}  mcp-publisher.tar.gz" | sha256sum --check --status
+          tar -xzf mcp-publisher.tar.gz mcp-publisher
+          chmod +x mcp-publisher
+          ./mcp-publisher --version
+
+      - name: Validate server.json
+        run: ./mcp-publisher validate
+
+      - name: Check whether this version is already published
+        id: registry_lookup
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          encoded_name="${SERVER_NAME//\//%2F}"
+          url="https://registry.modelcontextprotocol.io/v0.1/servers/${encoded_name}/versions/${VERSION}"
+          response_file="$(mktemp)"
+          status="$(curl --silent --show-error --output "$response_file" --write-out '%{http_code}' "$url")"
+
+          case "$status" in
+            200)
+              jq -e --arg name "$SERVER_NAME" --arg version "$VERSION" \
+                '.server.name == $name and .server.version == $version' "$response_file" >/dev/null
+              echo "already_published=true" >> "$GITHUB_OUTPUT"
+              echo "${SERVER_NAME} ${VERSION} is already in the official Registry."
+              ;;
+            404)
+              echo "already_published=false" >> "$GITHUB_OUTPUT"
+              echo "${SERVER_NAME} ${VERSION} is not yet in the official Registry."
+              ;;
+            *)
+              cat "$response_file" >&2
+              echo "Registry lookup failed with HTTP ${status}." >&2
+              exit 1
+              ;;
+          esac
+
+      - name: Authenticate to MCP Registry with GitHub OIDC
+        if: steps.registry_lookup.outputs.already_published != 'true'
+        run: ./mcp-publisher login github-oidc
+
+      - name: Publish server to MCP Registry
+        if: steps.registry_lookup.outputs.already_published != 'true'
+        run: ./mcp-publisher publish
+
+      - name: Verify published Registry version
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          encoded_name="${SERVER_NAME//\//%2F}"
+          url="https://registry.modelcontextprotocol.io/v0.1/servers/${encoded_name}/versions/${VERSION}"
+          for attempt in $(seq 1 10); do
+            if curl --fail --silent --show-error "$url" \
+              | jq -e --arg name "$SERVER_NAME" --arg version "$VERSION" \
+                '.server.name == $name and .server.version == $version' >/dev/null; then
+              echo "Verified ${SERVER_NAME} ${VERSION} in the official Registry."
+              exit 0
+            fi
+            echo "Waiting for Registry visibility (attempt ${attempt}/10)..."
+            sleep 5
+          done
+          echo "Registry publication could not be verified." >&2
+          exit 1

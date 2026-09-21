@@ -42,6 +42,14 @@ and returns typed results to MCP-capable hosts.
 
 Find the published server in the [official MCP Registry](https://registry.modelcontextprotocol.io/?q=io.github.Renwang-Huang%2Ftypesafe-mcp) or the [Glama directory](https://glama.ai/mcp/servers/Renwang-Huang/typesafe-mcp). For local installation, use the [PyPI package](https://pypi.org/project/typesafe-mcp/) with `uvx typesafe-mcp`.
 
+## Release automation
+
+A `v*` tag runs the [MCP Registry publisher](.github/workflows/publish-mcp.yml),
+which waits for the matching PyPI artifact and publishes with GitHub OIDC.
+Glama owns its repository-crawl schedule; [`glama.json`](glama.json) declares
+the maintainer, and the [ecosystem check](.github/workflows/ecosystem-sync.yml)
+verifies the public Registry and Glama listings without storing a Glama token.
+
 <!-- mcp-name: io.github.Renwang-Huang/typesafe-mcp -->
 
 ## At a glance

@@ -1,0 +1,41 @@
+name: Verify ecosystem listings
+
+on:
+  workflow_run:
+    workflows:
+      - Publish to MCP Registry
+    types: [completed]
+  schedule:
+    - cron: "17 4 * * *"
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Git ref to inspect
+        required: false
+        default: main
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || inputs.ref || github.sha }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+
+      - name: Resolve package version
+        id: version
+        run: echo "version=$(python -c 'from typesafe_mcp._version import __version__; print(__version__)')" >> "$GITHUB_OUTPUT"
+
+      - name: Verify Registry and Glama listings
+        run: python scripts/check_ecosystem_sync.py --version "${{ steps.version.outputs.version }}"
