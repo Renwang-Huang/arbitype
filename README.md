@@ -7,6 +7,7 @@
 <p>
   <a href="https://github.com/Renwang-Huang/typesafe-mcp/actions/workflows/ci.yml"><img src="https://github.com/Renwang-Huang/typesafe-mcp/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="https://github.com/Renwang-Huang/typesafe-mcp/releases"><img src="https://img.shields.io/github/v/release/Renwang-Huang/typesafe-mcp?display_name=tag&sort=semver" alt="Latest release"></a>
+  <a href="https://pypi.org/project/typesafe-mcp/"><img src="https://img.shields.io/pypi/v/typesafe-mcp" alt="PyPI version"></a>
   <a href="https://github.com/Renwang-Huang/typesafe-mcp/blob/main/LICENSE"><img src="https://img.shields.io/github/license/Renwang-Huang/typesafe-mcp" alt="MIT license"></a>
   <img src="https://img.shields.io/badge/python-3.10%2B-3776AB?logo=python&logoColor=white" alt="Python 3.10 or newer">
   <a href="https://github.com/modelcontextprotocol/modelcontextprotocol/tree/main/docs/specification/2026-07-28"><img src="https://img.shields.io/badge/MCP-2026--07--28-6F42C1" alt="MCP 2026-07-28"></a>
@@ -91,8 +92,20 @@ typesafe-mcp --version
 typesafe-mcp doctor --json
 ```
 
-The package has no runtime dependencies. An isolated installer such as `uvx`
-can run a published release directly from a pinned Git tag:
+The package has no runtime dependencies. Once [`uv`](https://docs.astral.sh/uv/)
+is installed, run the published PyPI package directly:
+
+```bash
+uvx typesafe-mcp
+```
+
+To pin the published version:
+
+```bash
+uvx --from 'typesafe-mcp==0.5.1' typesafe-mcp
+```
+
+For an unreleased source checkout, `uvx` can also run a pinned Git tag:
 
 ```bash
 uvx --from 'git+https://github.com/Renwang-Huang/typesafe-mcp@v0.5.1' \
