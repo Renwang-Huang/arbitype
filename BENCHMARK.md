@@ -1,19 +1,21 @@
 # MCP engineering comparison and verification
 
 This document records the engineering comparison and local verification used
-for the 0.4.0 release.
+for the 0.5.0 release.
 The repositories were inspected through their public source, documentation,
-and test layouts on 2026-09-21. This project was also exercised against the
-real TypeSafe API with short, controlled Jev requests; the credential was never
-printed or committed.
+and test layouts on 2026-09-21. GitHub star counts are only a snapshot, not a
+quality ranking. This project was also exercised against the real TypeSafe API
+with short, controlled Jev requests; the credential was never printed or
+committed.
 
 ## Professional MCP baselines
 
 | Project | Production practice observed | Decision for this project |
 | --- | --- | --- |
-| [modelcontextprotocol/python-sdk](https://github.com/modelcontextprotocol/python-sdk) | Official MIT SDK, typed protocol surface, multiple transports, conformance workflows, and an in-memory `Client` used for server tests | Keep the runtime dependency-free for a small TypeSafe STDIO adapter, but mirror the SDK's in-memory testing idea with subprocess protocol tests and strict schemas |
-| [PrefectHQ/fastmcp](https://github.com/PrefectHQ/fastmcp) | Mature Python framework, client/server abstractions, async pytest fixtures, snapshots, broad transport/auth coverage, and a very large test suite | Do not introduce a framework dependency for this narrow bridge; adopt its testing principles: catalog assertions, parameterized boundaries, and real transport smoke tests |
-| [MCPJam/inspector](https://github.com/MCPJam/inspector) | Dedicated inspection, conformance, eval, replay, and CI tooling for MCP servers | Keep this repository focused on the Jev adapter; expose deterministic STDIO smoke checks that can be run by Inspector or another MCP client |
+| [modelcontextprotocol/python-sdk](https://github.com/modelcontextprotocol/python-sdk) | Official Python SDK (24k stars at review time), typed protocol surface, 2026-07-28 plus earlier revisions, stdio/Streamable HTTP/SSE, discovery, and a real `Client` | Keep the runtime dependency-free; implement dual-era STDIO negotiation, precise schemas, and run the official SDK v2 against this server in CI. HTTP remains an explicit gap |
+| [PrefectHQ/fastmcp](https://github.com/PrefectHQ/fastmcp) | Mature Python framework (27k stars), server/client/app abstractions, generated schemas, auth/transports, async fixtures, typing and broad tests | Do not introduce a framework dependency for this narrow bridge; adopt its contract-first schemas, bounded async/interoperability tests, and documentation discipline |
+| [modelcontextprotocol/inspector](https://github.com/modelcontextprotocol/inspector) | Official web/CLI/TUI inspector (10k stars), composable test servers, smoke tests, packaging guards, and CI quality gates | Keep this repository focused on Jev; add a scriptable official-SDK smoke test that can also be driven by Inspector/MCPJam |
+| [MCPJam/inspector](https://github.com/MCPJam/inspector) | Cross-client/model evals, OAuth debugging, traces, conformance checks, and CI regression gates | The bridge now exposes stable tools/output schemas for inspection, but does not pretend to replace cross-client eval or OAuth tooling |
 | [snyk/agent-scan](https://github.com/snyk/agent-scan) | Explicit consent before executing discovered STDIO commands, agent config discovery, prompt-injection and secret-risk scanning, signed release artifacts | Treat this adapter as read-only and secret-conscious, but do not claim to be a supply-chain scanner; users should scan untrusted MCP configs separately |
 
 The main trade-off is intentional: the official SDK and FastMCP provide a
@@ -22,6 +24,19 @@ keeps a zero-runtime-dependency footprint, a small auditable codebase, and a
 focused TypeSafe tool contract. That makes it easy to start on a constrained
 agent host, but means new MCP protocol features must be tracked and implemented
 here instead of inherited from an SDK.
+
+## Capability gap matrix
+
+| Area | TypeSafe MCP 0.5.0 | Professional baseline | Assessment |
+| --- | --- | --- | --- |
+| MCP protocol | 2026-07-28 modern STDIO metadata plus legacy initialize revisions; `server/discover`; version errors | Official SDK supports the current revision and earlier revisions | Strong for local STDIO; verified with the official SDK v2 |
+| Transports | Newline-delimited STDIO only | Official SDK/FastMCP/Inspector support Streamable HTTP and often SSE | Deliberate limitation; remote deployment needs a separate transport layer |
+| Server features | Tools only; resources/prompts are not advertised | Frameworks commonly expose tools, resources, prompts, subscriptions, elicitation | Correctly narrow for Jev; do not add unused surface just for parity |
+| Schemas | Strict input validation and per-tool output schemas | Generated or typed schemas plus runtime validation | Competitive for this fixed contract |
+| Reliability | Bounded retries, `Retry-After`, size limits, redaction, fail-closed provider validation | Mature projects add async cancellation, tracing, and broader fault injection | Good local reliability; cancellation/telemetry remain next steps |
+| Testing | 47 offline tests, subprocess lifecycle tests, real provider check, official SDK v2 smoke in CI | Large projects add conformance suites, cross-client evals, coverage gates | Above a typical small server; not a replacement for cross-client evaluation |
+| Security | Environment-only secret, read-only annotations, no file/command execution, bounded diagnostics | HTTP servers add OAuth, token audience checks, sandboxing and scanners | Safe for local STDIO; not an authenticated remote service |
+| Release engineering | Matrix CI, wheel inspection, clean install, compatibility aliases | Mature projects add signed artifacts, automated publishing, dependency/update gates | Solid foundation; signed releases and registry publishing remain |
 
 ## Jev-specific community projects previously reviewed
 
@@ -36,7 +51,7 @@ here instead of inherited from an SDK.
 
 ## Local results
 
-- This project: 41 offline tests passed, followed by real Jev requests through
+- This project: 47 offline tests passed, followed by real Jev requests through
   the MCP STDIO process. The live response returned `jev-1.13.0`, all three
   question types, and token usage; response validation accepted it.
 - `@jkudish/jev-mcp`: build and unit/mock suite passed (the repository's
@@ -54,10 +69,15 @@ here instead of inherited from an SDK.
 
 ## Host and protocol verification
 
-- 41 local unit and integration tests pass with no network access and no API key.
+- 47 local unit and integration tests pass with no network access and no API key.
 - A real subprocess STDIO handshake was exercised through `initialize`,
   `notifications/initialized`, `tools/list`, `health`, and `shutdown`.
-- The initialization instructions are 501 characters, below the 512-character
+- A modern `server/discover` request and per-request `2026-07-28` metadata path
+  were exercised, including `resultType`, cache metadata, and unsupported-version
+  errors.
+- The official MCP Python SDK v2 connected to the server, negotiated
+  `2026-07-28`, listed all 9 tools, and called `health` successfully.
+- The initialization instructions are 484 characters, below the 512-character
   self-contained prefix limit used by the Codex integration.
 - Codex CLI 0.155.1 can list and inspect the configured `typesafe` STDIO server;
   the server advertises only its actual `tools` capability. The wire contract
@@ -69,6 +89,16 @@ here instead of inherited from an SDK.
   MCP host tool timeouts.
 - Live checks remain explicit paid operations; CI continues to use local fakes
   and never receives a provider credential.
+
+## Remaining priorities
+
+1. Add an optional Streamable HTTP deployment package with MCP OAuth discovery;
+   keep it separate from the zero-dependency STDIO core.
+2. Add Inspector/MCPJam-compatible cross-client smoke fixtures and a small
+   non-paid evaluation corpus for tool-selection regressions.
+3. Add structured cancellation and tracing if Jev requests become concurrent or
+   long-running; the current synchronous STDIO loop intentionally keeps the
+   failure surface small.
 
 These are repository smoke-test results, not a quality ranking or a claim that
 one project is safer for every deployment.

@@ -60,7 +60,7 @@ The package has no runtime dependencies. Once published, an isolated installer
 such as `uvx` can run it directly from a pinned Git tag:
 
 ```bash
-uvx --from 'git+https://github.com/Renwang-Huang/typesafe-mcp@v0.4.0' \
+uvx --from 'git+https://github.com/Renwang-Huang/typesafe-mcp@v0.5.0' \
   typesafe-mcp
 ```
 
@@ -197,3 +197,7 @@ Jev is designed for bounded judgments. Use ordinary code for exact math, date
 arithmetic, and authorization; use a generative model for prose or code
 generation. The bridge sends `state` to TypeSafe, so do not pass secrets or
 personal data without checking your data-handling requirements.
+
+The current transport is newline-delimited MCP STDIO. The server supports the
+modern `2026-07-28` metadata path and earlier `initialize` revisions, but it
+does not yet expose Streamable HTTP, SSE, OAuth, resources, or prompts.

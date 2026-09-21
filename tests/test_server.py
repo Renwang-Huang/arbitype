@@ -247,6 +247,9 @@ class ProtocolTests(unittest.TestCase):
                 "health",
             },
         )
+        route = next(tool for tool in listed["result"]["tools"] if tool["name"] == "route")
+        self.assertIn("route", route["outputSchema"]["required"])
+        self.assertEqual(route["outputSchema"]["properties"]["type"]["const"], "route")
 
     def test_notifications_and_invalid_protocol(self):
         self.assertIsNone(mcp.handle_message({"jsonrpc": "2.0", "method": "notifications/initialized"}))

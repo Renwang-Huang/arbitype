@@ -42,7 +42,8 @@ class HostContractTests(unittest.TestCase):
             self.assertTrue(tool["annotations"]["readOnlyHint"], tool["name"])
             self.assertFalse(tool["annotations"]["destructiveHint"], tool["name"])
             self.assertTrue(tool["annotations"]["idempotentHint"], tool["name"])
-            self.assertEqual(tool["outputSchema"], {"type": "object"})
+            self.assertEqual(tool["outputSchema"]["type"], "object")
+            self.assertIn("required", tool["outputSchema"])
             self.assertEqual(tool["inputSchema"]["additionalProperties"], False)
 
     def test_initialize_advertises_tools_only(self):
@@ -55,6 +56,65 @@ class HostContractTests(unittest.TestCase):
             }
         )
         self.assertEqual(response["result"]["capabilities"], {"tools": {"listChanged": False}})
+
+    def test_server_discovery_advertises_supported_protocol_contract(self):
+        response = mcp.handle_message(
+            {
+                "jsonrpc": "2.0",
+                "id": "discover-1",
+                "method": "server/discover",
+                "params": {
+                    "_meta": {
+                        "io.modelcontextprotocol/protocolVersion": "2026-07-28",
+                        "io.modelcontextprotocol/clientInfo": {"name": "test", "version": "1"},
+                        "io.modelcontextprotocol/clientCapabilities": {},
+                    }
+                },
+            }
+        )
+        result = response["result"]
+        self.assertEqual(result["resultType"], "complete")
+        self.assertEqual(result["supportedVersions"], list(mcp.SUPPORTED_PROTOCOL_VERSIONS))
+        self.assertEqual(result["_meta"]["io.modelcontextprotocol/serverInfo"]["name"], "typesafe-mcp")
+
+    def test_modern_metadata_requests_receive_complete_results(self):
+        metadata = {"_meta": {"io.modelcontextprotocol/protocolVersion": mcp.MODERN_PROTOCOL_VERSION}}
+        response = mcp.handle_message(
+            {"jsonrpc": "2.0", "id": "modern-1", "method": "tools/list", "params": metadata}
+        )
+        self.assertEqual(response["result"]["resultType"], "complete")
+        self.assertEqual(response["result"]["ttlMs"], 300_000)
+        self.assertEqual(response["result"]["cacheScope"], "public")
+        self.assertIn("route", {tool["name"] for tool in response["result"]["tools"]})
+
+    def test_unsupported_modern_version_returns_negotiation_error(self):
+        response = mcp.handle_message(
+            {
+                "jsonrpc": "2.0",
+                "id": "version-1",
+                "method": "ping",
+                "params": {"_meta": {"io.modelcontextprotocol/protocolVersion": "1900-01-01"}},
+            }
+        )
+        self.assertEqual(response["error"]["code"], -32022)
+        self.assertIn(mcp.MODERN_PROTOCOL_VERSION, response["error"]["data"]["supported"])
+
+    def test_initialize_preserves_requested_supported_legacy_version(self):
+        response = mcp.handle_message(
+            {
+                "jsonrpc": "2.0",
+                "id": 2,
+                "method": "initialize",
+                "params": {"protocolVersion": "2025-11-25"},
+            }
+        )
+        self.assertEqual(response["result"]["protocolVersion"], "2025-11-25")
+
+    def test_invalid_request_ids_are_rejected(self):
+        response = mcp.handle_message(
+            {"jsonrpc": "2.0", "id": None, "method": "ping", "params": {}}
+        )
+        self.assertEqual(response["error"]["code"], -32600)
 
     def test_health_is_local_and_does_not_require_key(self):
         with patch.dict(os.environ, {}, clear=True):
@@ -207,7 +267,7 @@ class StdioIntegrationTests(unittest.TestCase):
         self.assertEqual(completed.returncode, 0, completed.stderr)
         self.assertEqual(completed.stderr, "")
         responses = [json.loads(line) for line in completed.stdout.splitlines()]
-        self.assertEqual([response["error"]["code"] for response in responses], [-32700, -32700])
+        self.assertEqual([response["error"]["code"] for response in responses], [-32700, -32600])
 
 
 if __name__ == "__main__":

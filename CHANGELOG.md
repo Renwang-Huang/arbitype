@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.5.0 — 2026-09-21
+
+- Added MCP 2026-07-28 STDIO discovery and per-request metadata support while
+  retaining the legacy initialize handshake.
+- Added protocol version negotiation errors, modern `resultType` responses, and
+  cache metadata for list operations.
+- Replaced generic tool output objects with precise output schemas.
+- Added malformed JSON-RPC/id boundary tests and an official MCP Python SDK v2
+  interoperability smoke test in CI.
+
 ## 0.4.0 — 2026-09-21
 
 - Rebranded the public project as TypeSafe MCP and renamed the distribution and

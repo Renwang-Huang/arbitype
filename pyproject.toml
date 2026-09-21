@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "typesafe-mcp"
-version = "0.4.0"
+version = "0.5.0"
 description = "A dependency-free, host-neutral TypeSafe AI MCP service"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -43,3 +43,9 @@ include = ["typesafe_mcp*", "typesafe_codex_mcp*"]
 [tool.pytest.ini_options]
 addopts = "-q"
 testpaths = ["tests"]
+
+[tool.ruff]
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F"]

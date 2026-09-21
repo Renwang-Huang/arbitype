@@ -24,7 +24,7 @@ class BuildPyWithoutBytecode(_build_py):
 
 setup(
     name="typesafe-mcp",
-    version="0.4.0",
+    version="0.5.0",
     description="A dependency-free, host-neutral TypeSafe AI MCP service",
     long_description=open("README.md", encoding="utf-8").read(),
     long_description_content_type="text/markdown",

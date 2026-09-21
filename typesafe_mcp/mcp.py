@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import math
 import os
 import sys
 import time
@@ -99,12 +100,129 @@ SERVER_INSTRUCTIONS = (
     "code generation, arithmetic, dates, or prose."
 )
 
+# The current MCP specification (2026-07-28) introduced a per-request metadata
+# era. This bridge remains deliberately dual-purpose: it serves modern
+# per-request metadata clients and retains the initialize handshake used by
+# Codex and other established STDIO hosts.
+SUPPORTED_LEGACY_PROTOCOL_VERSIONS = (
+    "2025-11-25",
+    "2025-06-18",
+    "2025-03-26",
+    "2024-11-05",
+    "2024-10-07",
+)
+MODERN_PROTOCOL_VERSION = "2026-07-28"
+SUPPORTED_PROTOCOL_VERSIONS = (MODERN_PROTOCOL_VERSION, *SUPPORTED_LEGACY_PROTOCOL_VERSIONS)
+LATEST_LEGACY_PROTOCOL_VERSION = SUPPORTED_LEGACY_PROTOCOL_VERSIONS[0]
+
+USAGE_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "properties": {
+        "input_tokens": {"type": "integer", "minimum": 0},
+        "output_tokens": {"type": "integer", "minimum": 0},
+    },
+    "required": ["input_tokens", "output_tokens"],
+    "additionalProperties": True,
+}
+EVALUATION_OUTPUT_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "properties": {
+        "model": {"type": "string"},
+        "answers": {"type": "object"},
+        "usage": USAGE_SCHEMA,
+    },
+    "required": ["model", "answers", "usage"],
+    "additionalProperties": True,
+}
+
+
+def _single_output_schema(result_type: str) -> dict[str, Any]:
+    return {
+        "type": "object",
+        "properties": {
+            "type": {"const": result_type},
+            "answer": {"type": "object"},
+            "model": {"type": "string"},
+            "usage": USAGE_SCHEMA,
+            "evaluation": EVALUATION_OUTPUT_SCHEMA,
+        },
+        "required": ["type", "answer", "model", "usage", "evaluation"],
+        "additionalProperties": True,
+    }
+
+
+def _gate_output_schema(result_type: str) -> dict[str, Any]:
+    return {
+        "type": "object",
+        "properties": {
+            "type": {"const": result_type},
+            "decision": {"enum": ["pass", "review", "fail"]},
+            "policy": {
+                "type": "object",
+                "properties": {
+                    "pass_at": {"type": "number", "minimum": 0, "maximum": 1},
+                    "review_at": {"type": "number", "minimum": 0, "maximum": 1},
+                },
+                "required": ["pass_at", "review_at"],
+                "additionalProperties": False,
+            },
+            "checks": {"type": "object"},
+            "evaluation": EVALUATION_OUTPUT_SCHEMA,
+        },
+        "required": ["type", "decision", "policy", "checks", "evaluation"],
+        "additionalProperties": True,
+    }
+
+
+ROUTE_OUTPUT_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "properties": {
+        "type": {"const": "route"},
+        "route": {"type": "string"},
+        "answer": {"type": "object"},
+        "model": {"type": "string"},
+        "usage": USAGE_SCHEMA,
+        "evaluation": EVALUATION_OUTPUT_SCHEMA,
+    },
+    "required": ["type", "route", "answer", "model", "usage", "evaluation"],
+    "additionalProperties": True,
+}
+VERIFICATION_OUTPUT_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "properties": {
+        "type": {"const": "verification"},
+        "evaluation": EVALUATION_OUTPUT_SCHEMA,
+        "answers": {"type": "object"},
+    },
+    "required": ["type", "evaluation", "answers"],
+    "additionalProperties": True,
+}
+HEALTH_OUTPUT_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "properties": {
+        "type": {"const": "health"},
+        "server": {"type": "string"},
+        "version": {"type": "string"},
+        "api_key_configured": {"type": "boolean"},
+        "live": {"type": "boolean"},
+        "status": {"type": "string"},
+        "base_url": {"type": "string"},
+        "model": {"type": "string"},
+        "timeout_seconds": {"type": "number"},
+        "max_retries": {"type": "integer", "minimum": 0},
+    },
+    "required": ["type", "server", "version", "api_key_configured", "live"],
+    "additionalProperties": True,
+}
+
 
 def _tool(
     name: str,
     description: str,
     properties: dict[str, Any],
     required: list[str],
+    *,
+    output_schema: dict[str, Any],
 ) -> dict[str, Any]:
     return {
         "name": name,
@@ -116,7 +234,7 @@ def _tool(
             "idempotentHint": True,
             "openWorldHint": True,
         },
-        "outputSchema": {"type": "object"},
+        "outputSchema": output_schema,
         "inputSchema": {
             "type": "object",
             "properties": properties,
@@ -141,6 +259,7 @@ TOOLS = [
             "model": {"type": "string", "description": "Optional model id or alias."},
         },
         ["state", "questions"],
+        output_schema=EVALUATION_OUTPUT_SCHEMA,
     ),
     _tool(
         "classify",
@@ -152,6 +271,7 @@ TOOLS = [
             "model": {"type": "string"},
         },
         ["state", "instructions", "labels"],
+        output_schema=_single_output_schema("classification"),
     ),
     _tool(
         "score",
@@ -163,6 +283,7 @@ TOOLS = [
             "model": {"type": "string"},
         },
         ["state", "instructions", "levels"],
+        output_schema=_single_output_schema("score"),
     ),
     _tool(
         "check",
@@ -175,6 +296,7 @@ TOOLS = [
             "model": {"type": "string"},
         },
         ["state", "instructions"],
+        output_schema=_single_output_schema("check"),
     ),
     _tool(
         "verify",
@@ -188,6 +310,7 @@ TOOLS = [
             "model": {"type": "string"},
         },
         ["state", "claims"],
+        output_schema=VERIFICATION_OUTPUT_SCHEMA,
     ),
     _tool(
         "gate",
@@ -201,6 +324,7 @@ TOOLS = [
             "model": {"type": "string"},
         },
         ["state", "checks"],
+        output_schema=_gate_output_schema("gate"),
     ),
     _tool(
         "route",
@@ -217,6 +341,7 @@ TOOLS = [
             "model": {"type": "string"},
         },
         ["state", "actions"],
+        output_schema=ROUTE_OUTPUT_SCHEMA,
     ),
     _tool(
         "review",
@@ -229,6 +354,7 @@ TOOLS = [
             "model": {"type": "string"},
         },
         ["state", "checks"],
+        output_schema=_gate_output_schema("review"),
     ),
     _tool(
         "health",
@@ -237,6 +363,7 @@ TOOLS = [
             "live": {"type": "boolean", "default": False},
         },
         [],
+        output_schema=HEALTH_OUTPUT_SCHEMA,
     ),
 ]
 TOOL_MAP = {tool["name"]: tool for tool in TOOLS}
@@ -593,24 +720,80 @@ def call_tool(name: str, arguments: Any) -> dict[str, Any]:
     return dispatch[canonical_name](arguments, client)
 
 
-def _result(request_id: Any, result: Any) -> dict[str, Any]:
+def _result(request_id: Any, result: Any, *, modern: bool = False) -> dict[str, Any]:
+    if modern and isinstance(result, dict) and "resultType" not in result:
+        result = {"resultType": "complete", **result}
     return {"jsonrpc": "2.0", "id": request_id, "result": result}
 
 
-def _rpc_error(request_id: Any, code: int, message: str) -> dict[str, Any]:
+def _rpc_error(
+    request_id: Any,
+    code: int,
+    message: str,
+    data: Any | None = None,
+) -> dict[str, Any]:
+    error: dict[str, Any] = {"code": code, "message": message}
+    if data is not None:
+        error["data"] = data
     return {
         "jsonrpc": "2.0",
         "id": request_id,
-        "error": {"code": code, "message": message},
+        "error": error,
     }
+
+
+def _is_request_id(value: Any) -> bool:
+    """Return whether a value is a safe JSON-RPC request id."""
+
+    if isinstance(value, bool) or value is None:
+        return False
+    if isinstance(value, str):
+        return True
+    if isinstance(value, int):
+        return True
+    if isinstance(value, float):
+        return math.isfinite(value)
+    return False
+
+
+def _server_capabilities() -> dict[str, Any]:
+    return {"tools": {"listChanged": False}}
+
+
+def _discovery_result() -> dict[str, Any]:
+    """Return the modern discovery shape for both protocol eras."""
+
+    return {
+        "resultType": "complete",
+        "supportedVersions": list(SUPPORTED_PROTOCOL_VERSIONS),
+        "capabilities": _server_capabilities(),
+        "_meta": {
+            "io.modelcontextprotocol/serverInfo": {
+                "name": SERVER_NAME,
+                "version": SERVER_VERSION,
+            }
+        },
+        "instructions": SERVER_INSTRUCTIONS,
+        "ttlMs": 300_000,
+        "cacheScope": "public",
+    }
+
+
+def _request_protocol_version(params: dict[str, Any]) -> str | None:
+    metadata = params.get("_meta")
+    if not isinstance(metadata, dict):
+        return None
+    version = metadata.get("io.modelcontextprotocol/protocolVersion")
+    return version if isinstance(version, str) else None
 
 
 def handle_message(message: dict[str, Any]) -> dict[str, Any] | None:
     """Handle one JSON-RPC request. Return ``None`` for notifications."""
 
     if not isinstance(message, dict) or message.get("jsonrpc") != "2.0":
-        request_id = message.get("id") if isinstance(message, dict) else None
-        return _rpc_error(request_id, -32600, "invalid JSON-RPC request")
+        return _rpc_error(None, -32600, "invalid JSON-RPC request")
+    if "id" in message and not _is_request_id(message["id"]):
+        return _rpc_error(None, -32600, "request id must be a string or number")
 
     method = message.get("method")
     if not isinstance(method, str):
@@ -623,33 +806,61 @@ def handle_message(message: dict[str, Any]) -> dict[str, Any] | None:
     if not isinstance(params, dict):
         return None if is_notification else _rpc_error(request_id, -32602, "params must be an object")
 
+    requested_protocol_version = _request_protocol_version(params)
+    if requested_protocol_version is not None and requested_protocol_version not in SUPPORTED_PROTOCOL_VERSIONS:
+        return None if is_notification else _rpc_error(
+            request_id,
+            -32022,
+            "Unsupported protocol version",
+            {
+                "supported": list(SUPPORTED_PROTOCOL_VERSIONS),
+                "requested": requested_protocol_version,
+            },
+        )
+    modern = requested_protocol_version == MODERN_PROTOCOL_VERSION
+
     if method in {"notifications/initialized", "notifications/cancelled", "notifications/progress"}:
         return None
     if method == "ping":
-        return None if is_notification else _result(request_id, {})
+        return None if is_notification else _result(request_id, {}, modern=modern)
     if method == "shutdown":
-        return None if is_notification else _result(request_id, {})
+        return None if is_notification else _result(request_id, {}, modern=modern)
+    if method == "server/discover":
+        return None if is_notification else _result(request_id, _discovery_result(), modern=modern)
     if method == "initialize":
         requested = params.get("protocolVersion")
-        supported = {"2025-06-18", "2025-03-26", "2024-11-05", "2024-10-07"}
-        protocol_version = requested if isinstance(requested, str) and requested in supported else "2025-06-18"
+        protocol_version = (
+            requested
+            if isinstance(requested, str) and requested in SUPPORTED_LEGACY_PROTOCOL_VERSIONS
+            else LATEST_LEGACY_PROTOCOL_VERSION
+        )
         return None if is_notification else _result(
             request_id,
             {
                 "protocolVersion": protocol_version,
-                "capabilities": {"tools": {"listChanged": False}},
+                "capabilities": _server_capabilities(),
                 "serverInfo": {"name": SERVER_NAME, "version": SERVER_VERSION},
                 "instructions": SERVER_INSTRUCTIONS,
             },
+            modern=modern,
         )
     if method == "tools/list":
-        return None if is_notification else _result(request_id, {"tools": TOOLS})
+        result: dict[str, Any] = {"tools": TOOLS}
+        if modern:
+            result.update({"ttlMs": 300_000, "cacheScope": "public"})
+        return None if is_notification else _result(request_id, result, modern=modern)
     if method == "resources/list":
-        return None if is_notification else _result(request_id, {"resources": []})
+        result = {"resources": []}
+        if modern:
+            result.update({"ttlMs": 300_000, "cacheScope": "public"})
+        return None if is_notification else _result(request_id, result, modern=modern)
     if method == "prompts/list":
-        return None if is_notification else _result(request_id, {"prompts": []})
+        result = {"prompts": []}
+        if modern:
+            result.update({"ttlMs": 300_000, "cacheScope": "public"})
+        return None if is_notification else _result(request_id, result, modern=modern)
     if method == "logging/setLevel":
-        return None if is_notification else _result(request_id, {})
+        return None if is_notification else _result(request_id, {}, modern=modern)
     if method == "tools/call":
         if is_notification:
             return None
@@ -664,11 +875,13 @@ def handle_message(message: dict[str, Any]) -> dict[str, Any] | None:
                     "content": [{"type": "text", "text": _json_text(result)}],
                     "structuredContent": result,
                 },
+                modern=modern,
             )
         except BridgeError as exc:
             return _result(
                 request_id,
                 {"isError": True, "content": [{"type": "text", "text": str(exc)}]},
+                modern=modern,
             )
         except Exception:
             return _result(
@@ -677,6 +890,7 @@ def handle_message(message: dict[str, Any]) -> dict[str, Any] | None:
                     "isError": True,
                     "content": [{"type": "text", "text": "internal tool error"}],
                 },
+                modern=modern,
             )
 
     return None if is_notification else _rpc_error(request_id, -32601, f"method not found: {method}")
@@ -696,19 +910,24 @@ def main_stdio() -> int:
                 continue
             try:
                 message = json.loads(line)
-                if not isinstance(message, dict):
-                    raise ValueError("message must be an object")
-                # MCP replies to ``shutdown`` first; the client then sends the
-                # ``exit`` notification. Exit only after that notification so
-                # the lifecycle remains compatible with strict clients.
-                should_exit = message.get("method") == "exit"
-                response = handle_message(message)
-            except (json.JSONDecodeError, ValueError) as exc:
+            except json.JSONDecodeError as exc:
                 response = _rpc_error(None, -32700, f"invalid JSON-RPC message: {exc}")
-            except Exception:
-                # Never print tracebacks to stdout: a single malformed request
-                # must not corrupt the MCP stream or reveal local details.
-                response = _rpc_error(None, -32603, "internal server error")
+            else:
+                if not isinstance(message, dict):
+                    response = _rpc_error(None, -32600, "invalid JSON-RPC request")
+                else:
+                    # MCP replies to ``shutdown`` first; the client then sends
+                    # the ``exit`` notification. Exit only after that
+                    # notification so the lifecycle remains compatible with
+                    # strict clients.
+                    should_exit = message.get("method") == "exit"
+                    try:
+                        response = handle_message(message)
+                    except Exception:
+                        # Never print tracebacks to stdout: a single malformed
+                        # request must not corrupt the MCP stream or reveal
+                        # local details.
+                        response = _rpc_error(None, -32603, "internal server error")
 
         if response is not None:
             try:
@@ -723,6 +942,10 @@ def main_stdio() -> int:
 
 __all__ = [
     "SERVER_INSTRUCTIONS",
+    "MODERN_PROTOCOL_VERSION",
+    "SUPPORTED_PROTOCOL_VERSIONS",
+    "SUPPORTED_LEGACY_PROTOCOL_VERSIONS",
+    "LATEST_LEGACY_PROTOCOL_VERSION",
     "TOOLS",
     "TOOL_MAP",
     "TOOL_ALIASES",
