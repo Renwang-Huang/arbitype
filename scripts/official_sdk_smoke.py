@@ -23,7 +23,17 @@ async def run() -> None:
     async with Client(parameters, read_timeout_seconds=10) as client:
         tools = await client.list_tools()
         names = {tool.name for tool in tools.tools}
-        expected = {"evaluate", "classify", "check", "verify", "gate", "route", "review", "health"}
+        expected = {
+            "evaluate",
+            "classify",
+            "score",
+            "check",
+            "verify",
+            "gate",
+            "route",
+            "review",
+            "health",
+        }
         missing = expected - names
         if missing:
             raise RuntimeError(f"official SDK did not see expected tools: {sorted(missing)}")

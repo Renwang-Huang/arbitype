@@ -56,13 +56,22 @@ typesafe-mcp --version
 typesafe-mcp doctor --json
 ```
 
-The package has no runtime dependencies. Once published, an isolated installer
-such as `uvx` can run it directly from a pinned Git tag:
+The package has no runtime dependencies. An isolated installer such as `uvx`
+can run a published release directly from a pinned Git tag:
 
 ```bash
-uvx --from 'git+https://github.com/Renwang-Huang/typesafe-mcp@v0.5.0' \
+uvx --from 'git+https://github.com/Renwang-Huang/typesafe-mcp@v0.5.1' \
   typesafe-mcp
 ```
+
+### Package layout and compatibility
+
+`typesafe_mcp/` is the only implementation package and is the correct import
+path for new code. The similarly named `typesafe_codex_mcp/` directory is a
+legacy, zero-logic shim that re-exports the canonical package for applications
+that have not migrated yet; it is not a second MCP server and must not receive
+new implementation code. The old `typesafe-codex-mcp` command and the
+`codex_route`/`codex_review` tool names are retained only as migration aliases.
 
 ## MCP host configuration
 

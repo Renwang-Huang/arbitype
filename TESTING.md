@@ -54,8 +54,9 @@ MCP configuration.
 The CI quality gate also runs `scripts/official_sdk_smoke.py` with the official
 MCP Python SDK v2. It verifies that a real SDK client can negotiate the modern
 `2026-07-28` STDIO path, list the advertised tools, and call the local `health`
-tool. This keeps the dependency-free runtime honest without adding the SDK to
-the package's production dependencies.
+tool. It also asserts the complete nine-tool catalog, including `score`. This
+keeps the dependency-free runtime honest without adding the SDK to the package's
+production dependencies.
 
 ## CI
 

@@ -1,10 +1,22 @@
 """Compatibility metadata for older pip/setuptools versions."""
 
+import re
 import shutil
 from pathlib import Path
 
 from setuptools import find_packages, setup
 from setuptools.command.build_py import build_py as _build_py
+
+
+_VERSION_FILE = Path(__file__).resolve().parent / "typesafe_mcp" / "_version.py"
+_VERSION_MATCH = re.search(
+    r'^__version__\s*=\s*[\"\']([^\"\']+)[\"\']\s*$',
+    _VERSION_FILE.read_text(encoding="utf-8"),
+    re.MULTILINE,
+)
+if _VERSION_MATCH is None:
+    raise RuntimeError(f"could not read package version from {_VERSION_FILE}")
+__version__ = _VERSION_MATCH.group(1)
 
 
 class BuildPyWithoutBytecode(_build_py):
@@ -24,7 +36,7 @@ class BuildPyWithoutBytecode(_build_py):
 
 setup(
     name="typesafe-mcp",
-    version="0.5.0",
+    version=__version__,
     description="A dependency-free, host-neutral TypeSafe AI MCP service",
     long_description=open("README.md", encoding="utf-8").read(),
     long_description_content_type="text/markdown",

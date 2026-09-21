@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.5.1 — 2026-09-21
+
+- Made the canonical-versus-legacy package layout explicit in the README and
+  compatibility module docstrings; `typesafe_mcp` remains the only
+  implementation package.
+- Centralized the package version and strengthened the official SDK smoke test
+  so it checks all 9 advertised tools, including `score`.
+- Fixed isolated PEP 517 wheel builds so packaging does not import the source
+  package before it has been installed.
+
 ## 0.5.0 — 2026-09-21
 
 - Added MCP 2026-07-28 STDIO discovery and per-request metadata support while

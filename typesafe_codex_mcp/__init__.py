@@ -1,7 +1,7 @@
-"""Compatibility package for the pre-0.4.0 ``typesafe_codex_mcp`` name.
+"""Legacy compatibility package for the pre-0.4.0 import name.
 
-Use :mod:`typesafe_mcp` for new integrations. The old import path remains so
-existing applications can migrate without a synchronized upgrade.
+This package is a shim, not a second implementation. Use :mod:`typesafe_mcp`
+for all new integrations; the old import path remains for existing callers.
 """
 
 from typesafe_mcp import *  # noqa: F401,F403

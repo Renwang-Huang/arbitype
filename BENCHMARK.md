@@ -1,7 +1,7 @@
 # MCP engineering comparison and verification
 
 This document records the engineering comparison and local verification used
-for the 0.5.0 release.
+for the 0.5.1 release.
 The repositories were inspected through their public source, documentation,
 and test layouts on 2026-09-21. GitHub star counts are only a snapshot, not a
 quality ranking. This project was also exercised against the real TypeSafe API
@@ -27,14 +27,14 @@ here instead of inherited from an SDK.
 
 ## Capability gap matrix
 
-| Area | TypeSafe MCP 0.5.0 | Professional baseline | Assessment |
+| Area | TypeSafe MCP 0.5.1 | Professional baseline | Assessment |
 | --- | --- | --- | --- |
 | MCP protocol | 2026-07-28 modern STDIO metadata plus legacy initialize revisions; `server/discover`; version errors | Official SDK supports the current revision and earlier revisions | Strong for local STDIO; verified with the official SDK v2 |
 | Transports | Newline-delimited STDIO only | Official SDK/FastMCP/Inspector support Streamable HTTP and often SSE | Deliberate limitation; remote deployment needs a separate transport layer |
 | Server features | Tools only; resources/prompts are not advertised | Frameworks commonly expose tools, resources, prompts, subscriptions, elicitation | Correctly narrow for Jev; do not add unused surface just for parity |
 | Schemas | Strict input validation and per-tool output schemas | Generated or typed schemas plus runtime validation | Competitive for this fixed contract |
 | Reliability | Bounded retries, `Retry-After`, size limits, redaction, fail-closed provider validation | Mature projects add async cancellation, tracing, and broader fault injection | Good local reliability; cancellation/telemetry remain next steps |
-| Testing | 47 offline tests, subprocess lifecycle tests, real provider check, official SDK v2 smoke in CI | Large projects add conformance suites, cross-client evals, coverage gates | Above a typical small server; not a replacement for cross-client evaluation |
+| Testing | 48 offline tests, subprocess lifecycle tests, real provider check, official SDK v2 smoke in CI | Large projects add conformance suites, cross-client evals, coverage gates | Above a typical small server; not a replacement for cross-client evaluation |
 | Security | Environment-only secret, read-only annotations, no file/command execution, bounded diagnostics | HTTP servers add OAuth, token audience checks, sandboxing and scanners | Safe for local STDIO; not an authenticated remote service |
 | Release engineering | Matrix CI, wheel inspection, clean install, compatibility aliases | Mature projects add signed artifacts, automated publishing, dependency/update gates | Solid foundation; signed releases and registry publishing remain |
 
@@ -51,7 +51,7 @@ here instead of inherited from an SDK.
 
 ## Local results
 
-- This project: 47 offline tests passed, followed by real Jev requests through
+- This project: 48 offline tests passed, followed by real Jev requests through
   the MCP STDIO process. The live response returned `jev-1.13.0`, all three
   question types, and token usage; response validation accepted it.
 - `@jkudish/jev-mcp`: build and unit/mock suite passed (the repository's
@@ -69,7 +69,7 @@ here instead of inherited from an SDK.
 
 ## Host and protocol verification
 
-- 47 local unit and integration tests pass with no network access and no API key.
+- 48 local unit and integration tests pass with no network access and no API key.
 - A real subprocess STDIO handshake was exercised through `initialize`,
   `notifications/initialized`, `tools/list`, `health`, and `shutdown`.
 - A modern `server/discover` request and per-request `2026-07-28` metadata path
@@ -83,7 +83,11 @@ here instead of inherited from an SDK.
   the server advertises only its actual `tools` capability. The wire contract
   itself is host-neutral and uses standard MCP STDIO messages.
 - The wheel was built and installed in an isolated virtual environment, then
-  its version and MCP initialization were checked.
+  its version, canonical/legacy import identity, and MCP initialization were
+  checked.
+- The PEP 517 build path was exercised after removing the source-tree import
+  assumption from `setup.py`; clean isolated builds no longer depend on the
+  checkout being importable.
 - The default HTTP attempt timeout is 10 seconds, matching the official
   TypeSafe Python SDK and leaving room for bounded retry behavior under common
   MCP host tool timeouts.

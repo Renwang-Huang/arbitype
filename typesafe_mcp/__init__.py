@@ -1,5 +1,6 @@
 """TypeSafe AI's dependency-free, host-neutral MCP bridge."""
 
+from ._version import __version__
 from .core import (
     APIError,
     BridgeError,
@@ -11,6 +12,7 @@ from .core import (
 )
 
 __all__ = [
+    "__version__",
     "APIError",
     "BridgeError",
     "ConfigError",

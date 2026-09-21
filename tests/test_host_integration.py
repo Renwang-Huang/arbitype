@@ -10,6 +10,7 @@ from unittest.mock import patch
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
+import typesafe_mcp  # noqa: E402
 from typesafe_mcp import core, mcp  # noqa: E402
 
 
@@ -45,6 +46,16 @@ class HostContractTests(unittest.TestCase):
             self.assertEqual(tool["outputSchema"]["type"], "object")
             self.assertIn("required", tool["outputSchema"])
             self.assertEqual(tool["inputSchema"]["additionalProperties"], False)
+
+    def test_legacy_package_is_only_a_compatibility_shim(self):
+        import typesafe_codex_mcp
+        from typesafe_codex_mcp import core as legacy_core
+        from typesafe_codex_mcp import mcp as legacy_mcp
+
+        self.assertEqual(typesafe_mcp.__version__, core.SERVER_VERSION)
+        self.assertEqual(typesafe_codex_mcp.__version__, typesafe_mcp.__version__)
+        self.assertIs(legacy_core.Settings, core.Settings)
+        self.assertIs(legacy_mcp.handle_message, mcp.handle_message)
 
     def test_initialize_advertises_tools_only(self):
         response = mcp.handle_message(

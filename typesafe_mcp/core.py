@@ -23,9 +23,11 @@ from urllib.error import HTTPError, URLError
 from urllib.parse import urlsplit
 from urllib.request import Request, urlopen
 
+from ._version import __version__
+
 
 SERVER_NAME = "typesafe-mcp"
-SERVER_VERSION = "0.5.0"
+SERVER_VERSION = __version__
 DEFAULT_BASE_URL = "https://api.typesafe.ai"
 DEFAULT_MODEL = "jev-latest"
 # Match the official Python SDK's default per-operation timeout.  Keeping one
