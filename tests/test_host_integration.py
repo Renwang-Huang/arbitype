@@ -1,9 +1,11 @@
+import io
 import json
 import os
 import subprocess
 import sys
 import unittest
 from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import patch
 
 
@@ -89,7 +91,12 @@ class HostContractTests(unittest.TestCase):
         self.assertEqual(result["_meta"]["io.modelcontextprotocol/serverInfo"]["name"], "typesafe-mcp")
 
     def test_modern_metadata_requests_receive_complete_results(self):
-        metadata = {"_meta": {"io.modelcontextprotocol/protocolVersion": mcp.MODERN_PROTOCOL_VERSION}}
+        metadata = {
+            "_meta": {
+                "io.modelcontextprotocol/protocolVersion": mcp.MODERN_PROTOCOL_VERSION,
+                "io.modelcontextprotocol/clientCapabilities": {},
+            }
+        }
         response = mcp.handle_message(
             {"jsonrpc": "2.0", "id": "modern-1", "method": "tools/list", "params": metadata}
         )
@@ -97,6 +104,22 @@ class HostContractTests(unittest.TestCase):
         self.assertEqual(response["result"]["ttlMs"], 300_000)
         self.assertEqual(response["result"]["cacheScope"], "public")
         self.assertIn("route", {tool["name"] for tool in response["result"]["tools"]})
+
+    def test_modern_requests_require_client_capabilities(self):
+        response = mcp.handle_message(
+            {
+                "jsonrpc": "2.0",
+                "id": "modern-missing-capabilities",
+                "method": "tools/list",
+                "params": {
+                    "_meta": {
+                        "io.modelcontextprotocol/protocolVersion": mcp.MODERN_PROTOCOL_VERSION
+                    }
+                },
+            }
+        )
+        self.assertEqual(response["error"]["code"], -32602)
+        self.assertIn("clientCapabilities", response["error"]["message"])
 
     def test_unsupported_modern_version_returns_negotiation_error(self):
         response = mcp.handle_message(
@@ -122,10 +145,39 @@ class HostContractTests(unittest.TestCase):
         self.assertEqual(response["result"]["protocolVersion"], "2025-11-25")
 
     def test_invalid_request_ids_are_rejected(self):
+        for invalid_id in (None, 1.25, True):
+            with self.subTest(invalid_id=invalid_id):
+                response = mcp.handle_message(
+                    {"jsonrpc": "2.0", "id": invalid_id, "method": "ping", "params": {}}
+                )
+                self.assertEqual(response["error"]["code"], -32600)
+
+    def test_explicit_null_params_are_invalid(self):
         response = mcp.handle_message(
-            {"jsonrpc": "2.0", "id": None, "method": "ping", "params": {}}
+            {"jsonrpc": "2.0", "id": "null-params", "method": "ping", "params": None}
         )
-        self.assertEqual(response["error"]["code"], -32600)
+        self.assertEqual(response["error"]["code"], -32602)
+
+    def test_tool_schema_is_enforced_before_provider_call(self):
+        invalid_calls = (
+            ("verify", {"state": "evidence", "claims": {"claim": True}}),
+            ("gate", {"state": "patch", "checks": {"tests": True}}),
+            ("check", {"state": "evidence", "instructions": "ready?", "true_criteria": False}),
+            ("score", {"state": "release", "instructions": "Score it", "levels": [None, "high"]}),
+            (
+                "evaluate",
+                {
+                    "state": "evidence",
+                    "questions": {"ready": {"type": "noul", "instructions": True}},
+                },
+            ),
+        )
+        with patch.object(mcp, "TypeSafeClient", side_effect=AssertionError("provider was called")):
+            for name, arguments in invalid_calls:
+                with self.subTest(name=name), self.assertRaisesRegex(
+                    core.BridgeError, "advertised input schema"
+                ):
+                    mcp.call_tool(name, arguments)
 
     def test_health_is_local_and_does_not_require_key(self):
         with patch.dict(os.environ, {}, clear=True):
@@ -136,7 +188,7 @@ class HostContractTests(unittest.TestCase):
 
     def test_health_rejects_implicit_live_requests(self):
         with patch.dict(os.environ, {"TYPESAFE_API_KEY": "secret"}, clear=True):
-            with self.assertRaisesRegex(core.BridgeError, "live must be a boolean"):
+            with self.assertRaisesRegex(core.BridgeError, "advertised input schema"):
                 mcp.call_tool("health", {"live": "yes"})
 
     def test_route_creates_a_single_choice_question(self):
@@ -279,6 +331,68 @@ class StdioIntegrationTests(unittest.TestCase):
         self.assertEqual(completed.stderr, "")
         responses = [json.loads(line) for line in completed.stdout.splitlines()]
         self.assertEqual([response["error"]["code"] for response in responses], [-32700, -32600])
+
+    def test_stdio_rejects_invalid_utf8_without_tracebacks(self):
+        child_env = dict(os.environ)
+        child_env.pop("TYPESAFE_API_KEY", None)
+        completed = subprocess.run(
+            [sys.executable, "server.py"],
+            cwd=ROOT,
+            input=b"\xff\n[]\n{\"jsonrpc\":\"2.0\",\"method\":\"exit\"}\n",
+            capture_output=True,
+            env=child_env,
+            timeout=5,
+            check=False,
+        )
+        self.assertEqual(completed.returncode, 0, completed.stderr.decode())
+        self.assertEqual(completed.stderr, b"")
+        responses = [json.loads(line) for line in completed.stdout.splitlines()]
+        self.assertEqual([response["error"]["code"] for response in responses], [-32700, -32600])
+
+    def test_stdio_rejects_deeply_nested_json_without_tracebacks(self):
+        child_env = dict(os.environ)
+        child_env.pop("TYPESAFE_API_KEY", None)
+        nested = b"[" * 2000 + b"]" * 2000
+        completed = subprocess.run(
+            [sys.executable, "server.py"],
+            cwd=ROOT,
+            input=nested + b'\n{"jsonrpc":"2.0","method":"exit"}\n',
+            capture_output=True,
+            env=child_env,
+            timeout=5,
+            check=False,
+        )
+        self.assertEqual(completed.returncode, 0, completed.stderr.decode())
+        self.assertEqual(completed.stderr, b"")
+        responses = [json.loads(line) for line in completed.stdout.splitlines()]
+        self.assertEqual([response["error"]["code"] for response in responses], [-32700])
+
+    def test_stdio_reads_and_discards_oversized_lines_with_bounded_calls(self):
+        class RecordingReader:
+            def __init__(self, payload):
+                self.stream = io.BytesIO(payload)
+                self.readline_sizes = []
+
+            def readline(self, size=-1):
+                self.readline_sizes.append(size)
+                return self.stream.readline(size)
+
+        payload = (
+            b"x" * (mcp.MAX_INPUT_LINE_BYTES + 1024)
+            + b"\n[]\n{\"jsonrpc\":\"2.0\",\"method\":\"exit\"}\n"
+        )
+        reader = RecordingReader(payload)
+        stdout = io.StringIO()
+        with patch.object(mcp.sys, "stdin", SimpleNamespace(buffer=reader)), patch.object(
+            mcp.sys, "stdout", stdout
+        ):
+            self.assertEqual(mcp.main_stdio(), 0)
+
+        responses = [json.loads(line) for line in stdout.getvalue().splitlines()]
+        self.assertEqual([response["error"]["code"] for response in responses], [-32600, -32600])
+        self.assertEqual(reader.readline_sizes[0], mcp.MAX_INPUT_LINE_BYTES + 1)
+        self.assertIn(8192, reader.readline_sizes[1:])
+        self.assertTrue(all(size <= mcp.MAX_INPUT_LINE_BYTES + 1 for size in reader.readline_sizes))
 
 
 if __name__ == "__main__":

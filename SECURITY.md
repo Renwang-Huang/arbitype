@@ -13,6 +13,18 @@ tool arguments, source code, shell history, a checked-in host config, or an
 issue. The bridge never includes the key in MCP output and redacts it from
 provider error details.
 
+## Custom endpoints
+
+`TYPESAFE_BASE_URL` must use HTTPS. Plain HTTP is accepted only for loopback
+hosts (`localhost`, `127.0.0.1`, or `::1`) so local test doubles can be used
+without allowing the bearer credential to cross an unencrypted network.
+
+The STDIO reader bounds each input frame before parsing it, rejects invalid
+UTF-8 as a protocol parse error, and validates tool arguments against the
+schemas advertised through `tools/list` before creating a provider request.
+Provider redirects are disabled; a redirect response is treated as an error
+and no bearer-authenticated request is sent to its `Location` target.
+
 ## Reporting a vulnerability
 
 Please do not open a public issue for a credential leak or an exploitable

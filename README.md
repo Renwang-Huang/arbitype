@@ -122,13 +122,13 @@ uvx typesafe-mcp
 To pin the published version:
 
 ```bash
-uvx --from 'typesafe-mcp==0.5.2' typesafe-mcp
+uvx --from 'typesafe-mcp==0.5.3' typesafe-mcp
 ```
 
 For an unreleased source checkout, `uvx` can also run a pinned Git tag:
 
 ```bash
-uvx --from 'git+https://github.com/Renwang-Huang/typesafe-mcp@v0.5.2' \
+uvx --from 'git+https://github.com/Renwang-Huang/typesafe-mcp@v0.5.3' \
   typesafe-mcp
 ```
 
@@ -200,6 +200,11 @@ accepted, but new configurations should use `route` and `review`.
 | `review` | `state` + `checks` map + thresholds | Review decision and evidence |
 | `health` | Optional `live` boolean | Local configuration; live request only when explicit |
 
+For raw Noul questions, provide non-empty `instructions` or at least one
+non-empty `true`/`false` criterion. Score levels must be non-null structured
+values; Choice label descriptions may be `null`, strings, objects, or arrays.
+These provider-level constraints are validated locally before a paid request.
+
 Example `classify` call:
 
 ```json
@@ -257,6 +262,11 @@ result = client.evaluate({
 | `TYPESAFE_MAX_REQUEST_BYTES` | `512000` | Whole request limit |
 | `TYPESAFE_MAX_RESPONSE_BYTES` | `4194304` | Provider response limit |
 
+Custom provider endpoints must use HTTPS. Plain HTTP is accepted only for
+loopback hosts such as `localhost`, `127.0.0.1`, and `::1`, which keeps local
+test fakes possible without allowing credentials to leave the machine in
+cleartext.
+
 ## Development
 
 ```bash
@@ -278,7 +288,7 @@ implementations reviewed during development.
 
 ## Boundaries
 
-| Supported in v0.5.2 | Deliberately not provided |
+| Supported in v0.5.3 | Deliberately not provided |
 | --- | --- |
 | MCP STDIO, modern `2026-07-28` metadata, and earlier `initialize` revisions | Streamable HTTP, SSE, or OAuth |
 | Tools with typed inputs, structured outputs, and read-only annotations | Resources, prompts, subscriptions, or elicitation |

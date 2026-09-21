@@ -9,12 +9,12 @@
     "id": "1379667659"
   },
   "websiteUrl": "https://github.com/Renwang-Huang/typesafe-mcp",
-  "version": "0.5.2",
+  "version": "0.5.3",
   "packages": [
     {
       "registryType": "pypi",
       "identifier": "typesafe-mcp",
-      "version": "0.5.2",
+      "version": "0.5.3",
       "runtimeHint": "uvx",
       "transport": {
         "type": "stdio"

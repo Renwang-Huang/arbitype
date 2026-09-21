@@ -17,14 +17,19 @@ runtime and test modules.
 
 The test suite uses standard-library fakes and does not need an API key. It
 covers request and response validation, credential redaction, retry behavior,
-configuration errors, MCP schemas and annotations, host initialization,
-subprocess STDIO framing, shutdown, tool failures, and clean wheel contents.
+configuration errors, MCP schemas and annotations, modern metadata and JSON-RPC
+boundaries, bounded STDIO framing and invalid UTF-8, shutdown, tool failures,
+and clean wheel contents.
 
-The live verification performed during development sent one MCP `evaluate`
-request containing Noul, Choice, and Score questions to `jev-latest`. TypeSafe
-returned `jev-1.13.0`, calibrated probabilities/confidence, and `usage`; the
-bridge accepted the response after its strict contract validation. Live checks
-are deliberately excluded from CI because they are paid and require a secret.
+The live verification performed during development made 35 real requests to
+`jev-latest`, including a three-round, 19-call matrix covering every provider
+backed tool, structured values, batch questions, routing, review, and gate
+decisions. Successful responses returned `jev-1.13.0`, calibrated
+probabilities/confidence, and `usage`; the bridge accepted them after strict
+contract validation. The boundary calls also confirmed that Noul needs
+meaningful instructions or criteria and Score levels cannot be `null`; those
+constraints are now rejected locally before a paid request. Live checks are
+deliberately excluded from CI because they are paid and require a secret.
 
 ## Host check
 

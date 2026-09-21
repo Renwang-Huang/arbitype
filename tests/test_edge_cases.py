@@ -57,7 +57,11 @@ class SettingsEdgeTests(unittest.TestCase):
         self.assertEqual(settings.max_retries, 4)
 
     def test_environment_rejects_credentials_query_and_invalid_numbers(self):
-        for base_url in ("https://user:pass@example.test", "https://example.test?a=1"):
+        for base_url in (
+            "https://user:pass@example.test",
+            "https://example.test?a=1",
+            "http://example.test",
+        ):
             with self.subTest(base_url=base_url), patch.dict(
                 os.environ, {"TYPESAFE_BASE_URL": base_url}, clear=True
             ):
@@ -66,6 +70,16 @@ class SettingsEdgeTests(unittest.TestCase):
         with patch.dict(os.environ, {"TYPESAFE_MAX_RETRIES": "not-a-number"}, clear=True):
             with self.assertRaisesRegex(core.ConfigError, "TYPESAFE_MAX_RETRIES"):
                 core.Settings.from_env(require_key=False)
+
+    def test_environment_allows_http_only_for_loopback(self):
+        for base_url in ("http://127.0.0.1:8080", "http://localhost:8080", "http://[::1]:8080"):
+            with self.subTest(base_url=base_url), patch.dict(
+                os.environ, {"TYPESAFE_BASE_URL": base_url}, clear=True
+            ):
+                self.assertEqual(core.Settings.from_env(require_key=False).base_url, base_url)
+
+        with self.assertRaises(core.ConfigError):
+            core.Settings(api_key="secret", base_url="http://example.test")
 
     def test_utf8_byte_limits_are_enforced(self):
         settings = core.Settings(api_key="secret", max_state_chars=4)
@@ -146,6 +160,60 @@ class ResponseAndTransportEdgeTests(unittest.TestCase):
         self.assertEqual(received["authorization"], "Bearer secret-key")
         self.assertEqual(received["body"]["questions"]["ready"]["type"], "noul")
 
+    def test_redirects_never_forward_authorization(self):
+        redirect_received = {}
+        target_received = {}
+
+        class TargetHandler(BaseHTTPRequestHandler):
+            def do_POST(self):  # noqa: N802
+                target_received["authorization"] = self.headers.get("Authorization")
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json")
+                self.end_headers()
+                self.wfile.write(json.dumps(noul_payload()).encode("utf-8"))
+
+            def log_message(self, *_args):
+                return
+
+        target_server = ThreadingHTTPServer(("127.0.0.1", 0), TargetHandler)
+        target_thread = threading.Thread(target=target_server.serve_forever, daemon=True)
+        target_thread.start()
+
+        class RedirectHandler(BaseHTTPRequestHandler):
+            def do_POST(self):  # noqa: N802
+                redirect_received["authorization"] = self.headers.get("Authorization")
+                self.send_response(302)
+                self.send_header(
+                    "Location",
+                    f"http://127.0.0.1:{target_server.server_port}/redirected",
+                )
+                self.end_headers()
+
+            def log_message(self, *_args):
+                return
+
+        redirect_server = ThreadingHTTPServer(("127.0.0.1", 0), RedirectHandler)
+        redirect_thread = threading.Thread(target=redirect_server.serve_forever, daemon=True)
+        redirect_thread.start()
+        try:
+            settings = core.Settings(
+                api_key="secret-key",
+                base_url=f"http://127.0.0.1:{redirect_server.server_port}/api",
+                max_retries=0,
+            )
+            with self.assertRaisesRegex(core.APIError, "HTTP 302"):
+                core.post_to_typesafe(self.payload, settings=settings)
+        finally:
+            redirect_server.shutdown()
+            redirect_server.server_close()
+            redirect_thread.join(timeout=2)
+            target_server.shutdown()
+            target_server.server_close()
+            target_thread.join(timeout=2)
+
+        self.assertEqual(redirect_received["authorization"], "Bearer secret-key")
+        self.assertNotIn("authorization", target_received)
+
     def test_invalid_json_and_oversized_response_fail_safely(self):
         with patch.object(core, "urlopen", return_value=RawResponse(b"not-json")):
             with self.assertRaisesRegex(core.APIError, "invalid JSON"):
@@ -198,15 +266,14 @@ class ResponseAndTransportEdgeTests(unittest.TestCase):
         with self.assertRaises(core.APIError):
             core.validate_api_response(invalid, questions)
 
-    def test_official_structured_null_entries_are_accepted(self):
+    def test_structured_entries_are_accepted(self):
         payload = core.validate_request(
             {
                 "state": {"message": "hello", "metadata": None},
                 "questions": {
                     "noul": {
                         "type": "noul",
-                        "instructions": None,
-                        "criteria": {"true": None, "false": None},
+                        "instructions": "Does this look ready?",
                     },
                     "choice": {
                         "type": "choice",
@@ -216,13 +283,13 @@ class ResponseAndTransportEdgeTests(unittest.TestCase):
                     "score": {
                         "type": "score",
                         "instructions": ["How severe?"],
-                        "criteria": [None, "high"],
+                        "criteria": [{"level": "low"}, "high"],
                     },
                 },
             },
             self.settings,
         )
-        self.assertIsNone(payload["questions"]["noul"]["instructions"])
+        self.assertEqual(payload["questions"]["noul"]["instructions"], "Does this look ready?")
 
     def test_response_requires_official_model_and_usage_fields(self):
         questions = {"ready": {"type": "noul", "instructions": "Ready?"}}

@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.5.3 — 2026-09-22
+
+- Bound STDIO frame reads to 16 MiB and discard oversized lines without
+  allocating the complete input; invalid UTF-8 now returns JSON-RPC parse
+  error `-32700` without terminating the server.
+- Enforced modern per-request MCP metadata, integer-only JSON-RPC request IDs,
+  and invalid explicit `params: null` handling while retaining legacy
+  handshake compatibility.
+- Added runtime validation for every advertised tool input and restricted
+  custom HTTP API endpoints to loopback hosts; remote endpoints must use
+  HTTPS.
+- Added provider-semantic preflight checks for Noul content and non-null Score
+  levels, preventing known TypeSafe 400/422 responses after a paid request.
+- Disabled automatic HTTP redirects so bearer credentials are never forwarded
+  to a redirect target.
+- Converted deeply nested or otherwise invalid JSON input into JSON-RPC parse
+  error `-32700` without terminating the STDIO server.
+
 ## 0.5.2 — 2026-09-21
 
 - Published the `typesafe-mcp` distribution to PyPI for direct `uvx` installs.

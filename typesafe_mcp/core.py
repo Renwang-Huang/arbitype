@@ -7,6 +7,7 @@ MCP-capable agent host that can start Python 3.10 or newer.
 
 from __future__ import annotations
 
+import ipaddress
 import json
 import math
 import os
@@ -21,7 +22,7 @@ from http.client import HTTPException
 from typing import Any, Callable, Mapping
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlsplit
-from urllib.request import Request, urlopen
+from urllib.request import HTTPRedirectHandler, Request, build_opener
 
 from ._version import __version__
 
@@ -51,6 +52,34 @@ RETRYABLE_STATUSES = frozenset({408, 429, 500, 502, 503, 504, 529})
 
 JsonObject = dict[str, Any]
 Sleep = Callable[[float], None]
+
+
+class _NoRedirectHandler(HTTPRedirectHandler):
+    """Turn provider redirects into errors before urllib can resend a request."""
+
+    def redirect_request(
+        self,
+        req: Request,
+        fp: Any,
+        code: int,
+        msg: str,
+        headers: Any,
+        newurl: str,
+    ) -> None:
+        raise HTTPError(req.full_url, code, "redirects are disabled", headers, fp)
+
+
+_NO_REDIRECT_OPENER = build_opener(_NoRedirectHandler())
+
+
+def urlopen(request: Request, timeout: float | None = None) -> Any:
+    """Open one request without following redirects.
+
+    This remains a module-level seam so tests can replace the network call
+    without installing a process-wide urllib opener.
+    """
+
+    return _NO_REDIRECT_OPENER.open(request, timeout=timeout)
 
 
 class BridgeError(Exception):
@@ -102,6 +131,9 @@ class Settings:
     max_response_bytes: int = DEFAULT_MAX_RESPONSE_BYTES
     max_questions: int = DEFAULT_MAX_QUESTIONS
 
+    def __post_init__(self) -> None:
+        _validate_base_url(self.base_url)
+
     @classmethod
     def from_env(cls, *, require_key: bool = True) -> "Settings":
         api_key = os.getenv("TYPESAFE_API_KEY", "").strip()
@@ -111,7 +143,6 @@ class Settings:
             )
 
         base_url = os.getenv("TYPESAFE_BASE_URL", DEFAULT_BASE_URL).strip().rstrip("/")
-        _validate_base_url(base_url)
 
         # TYPESAFE_MODEL was used by the first public version.  The official
         # SDK calls the equivalent setting TYPESAFE_DEFAULT_MODEL, so support
@@ -188,13 +219,34 @@ def _env_float(name: str, default: float, minimum: float, maximum: float) -> flo
 
 
 def _validate_base_url(base_url: str) -> None:
-    parsed = urlsplit(base_url)
+    if not isinstance(base_url, str):
+        raise ConfigError("TYPESAFE_BASE_URL must be an http(s) URL")
+    try:
+        parsed = urlsplit(base_url)
+        hostname = parsed.hostname
+    except ValueError as exc:
+        raise ConfigError("TYPESAFE_BASE_URL must be a valid http(s) URL") from exc
     if parsed.scheme not in {"http", "https"} or not parsed.netloc:
         raise ConfigError("TYPESAFE_BASE_URL must be an http(s) URL")
+    if hostname is None:
+        raise ConfigError("TYPESAFE_BASE_URL must include a host")
     if parsed.username or parsed.password:
         raise ConfigError("TYPESAFE_BASE_URL must not contain embedded credentials")
     if parsed.query or parsed.fragment:
         raise ConfigError("TYPESAFE_BASE_URL must not contain a query or fragment")
+    if parsed.scheme == "http" and not _is_loopback_host(hostname):
+        raise ConfigError(
+            "TYPESAFE_BASE_URL must use HTTPS; HTTP is only allowed for loopback hosts"
+        )
+
+
+def _is_loopback_host(hostname: str) -> bool:
+    if hostname.lower() == "localhost":
+        return True
+    try:
+        return ipaddress.ip_address(hostname).is_loopback
+    except ValueError:
+        return False
 
 
 def _is_number(value: Any) -> bool:
@@ -210,6 +262,16 @@ def _is_structured(value: Any, *, allow_null: bool = False) -> bool:
     if value is None:
         return allow_null
     return isinstance(value, (str, dict, list))
+
+
+def _has_structured_content(value: Any) -> bool:
+    if value is None:
+        return False
+    if isinstance(value, str):
+        return bool(value.strip())
+    if isinstance(value, (dict, list)):
+        return bool(value)
+    return True
 
 
 def _json_bytes(value: Any, *, context: str) -> bytes:
@@ -297,6 +359,13 @@ def validate_request(arguments: Any, settings: Settings | None = None) -> JsonOb
                     raise BridgeError(
                         f"noul question {question_id!r} criteria values must be structured JSON or null"
                     )
+            has_criteria = isinstance(criteria, dict) and any(
+                _has_structured_content(value) for value in criteria.values()
+            )
+            if not _has_structured_content(question["instructions"]) and not has_criteria:
+                raise BridgeError(
+                    f"noul question {question_id!r} needs non-empty instructions or criteria"
+                )
         elif question_type == "choice":
             if not isinstance(criteria, dict) or not criteria:
                 raise BridgeError(
@@ -322,9 +391,9 @@ def validate_request(arguments: Any, settings: Settings | None = None) -> JsonOb
                 raise BridgeError(
                     f"score question {question_id!r} needs between 2 and 10 criteria levels"
                 )
-            if not all(_is_structured(level, allow_null=True) for level in criteria):
+            if not all(_is_structured(level) for level in criteria):
                 raise BridgeError(
-                    f"score question {question_id!r} criteria levels must be structured JSON or null"
+                    f"score question {question_id!r} criteria levels must be non-null structured JSON"
                 )
 
         normalized_questions[question_id] = {

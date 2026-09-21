@@ -120,6 +120,34 @@ class ValidationTests(unittest.TestCase):
                 self.settings,
             )
 
+    def test_provider_semantic_question_constraints_are_checked_locally(self):
+        for question in (
+            {"type": "noul", "instructions": None},
+            {"type": "noul", "instructions": None, "criteria": {"true": None, "false": None}},
+            {"type": "noul", "instructions": "", "criteria": {}},
+        ):
+            with self.subTest(question=question), self.assertRaisesRegex(
+                core.BridgeError, "needs non-empty instructions or criteria"
+            ):
+                core.validate_request(
+                    {"state": "hello", "questions": {"q": question}}, self.settings
+                )
+
+        with self.assertRaisesRegex(core.BridgeError, "non-null structured JSON"):
+            core.validate_request(
+                {
+                    "state": "hello",
+                    "questions": {
+                        "q": {
+                            "type": "score",
+                            "instructions": "Score this",
+                            "criteria": [None, "high"],
+                        }
+                    },
+                },
+                self.settings,
+            )
+
     def test_payload_size_is_checked_before_network(self):
         small = core.Settings(api_key="secret", max_state_chars=10, max_request_bytes=100)
         with self.assertRaisesRegex(core.BridgeError, "state exceeds"):
