@@ -7,6 +7,8 @@
 - Added read-only/idempotent MCP tool annotations and a Codex-focused initialization guide.
 - Removed unsupported resource and prompt capabilities and implemented the MCP shutdown/exit lifecycle.
 - Added safer handling for unexpected tool failures.
+- Aligned request/response validation with the official API, including structured null entries,
+  required model/usage fields, probability-weighted Score validation, and a 10-second default timeout.
 
 ## 0.2.0 — 2026-09-21
 

@@ -156,7 +156,7 @@ result = client.evaluate({
 | `TYPESAFE_BASE_URL` | `https://api.typesafe.ai` | API base URL |
 | `TYPESAFE_MODEL` | `jev-latest` | Model alias; legacy name supported |
 | `TYPESAFE_DEFAULT_MODEL` | `jev-latest` | Official SDK-compatible model name |
-| `TYPESAFE_TIMEOUT_SECONDS` | `30` | Per HTTP attempt timeout |
+| `TYPESAFE_TIMEOUT_SECONDS` | `10` | Per HTTP attempt timeout |
 | `TYPESAFE_MAX_RETRIES` | `2` | Retries after the initial request |
 | `TYPESAFE_RETRY_BACKOFF_SECONDS` | `0.5` | Initial exponential backoff |
 | `TYPESAFE_MAX_STATE_CHARS` | `120000` | Serialized state limit |

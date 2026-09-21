@@ -1,12 +1,29 @@
-# Community comparison and release notes
+# MCP engineering comparison and verification
 
 This document records the engineering comparison and local verification used
 for the 0.3.0 release.
-The repositories were cloned into a temporary directory and tested without a
-live API key on 2026-09-21. A live TypeSafe request was intentionally not run
-with the previously exposed credential.
+The repositories were inspected through their public source, documentation,
+and test layouts on 2026-09-21. This project was also exercised against the
+real TypeSafe API with short, controlled Jev requests; the credential was never
+printed or committed.
 
-## Repositories tested
+## Professional MCP baselines
+
+| Project | Production practice observed | Decision for this project |
+| --- | --- | --- |
+| [modelcontextprotocol/python-sdk](https://github.com/modelcontextprotocol/python-sdk) | Official MIT SDK, typed protocol surface, multiple transports, conformance workflows, and an in-memory `Client` used for server tests | Keep the runtime dependency-free for a small Codex STDIO adapter, but mirror the SDK's in-memory testing idea with subprocess protocol tests and strict schemas |
+| [PrefectHQ/fastmcp](https://github.com/PrefectHQ/fastmcp) | Mature Python framework, client/server abstractions, async pytest fixtures, snapshots, broad transport/auth coverage, and a very large test suite | Do not introduce a framework dependency for this narrow bridge; adopt its testing principles: catalog assertions, parameterized boundaries, and real transport smoke tests |
+| [MCPJam/inspector](https://github.com/MCPJam/inspector) | Dedicated inspection, conformance, eval, replay, and CI tooling for MCP servers | Keep this repository focused on the Jev adapter; expose deterministic STDIO smoke checks that can be run by Inspector or another MCP client |
+| [snyk/agent-scan](https://github.com/snyk/agent-scan) | Explicit consent before executing discovered STDIO commands, agent/Codex config discovery, prompt-injection and secret-risk scanning, signed release artifacts | Treat this adapter as read-only and secret-conscious, but do not claim to be a supply-chain scanner; users should scan untrusted MCP configs separately |
+
+The main trade-off is intentional: the official SDK and FastMCP provide a
+broader protocol surface and stronger reusable abstractions, while this project
+keeps a zero-runtime-dependency footprint, a small auditable codebase, and a
+Codex-specific tool contract. That makes it easier to start on a remote Codex
+host, but means new MCP protocol features must be tracked and implemented here
+instead of inherited from an SDK.
+
+## Jev-specific community projects previously reviewed
 
 | Project | What it does well | What we kept out or changed |
 | --- | --- | --- |
@@ -19,7 +36,9 @@ with the previously exposed credential.
 
 ## Local results
 
-- This project: 15 tests passed with no network access and no credentials.
+- This project: 41 offline tests passed, followed by real Jev requests through
+  the MCP STDIO process. The live response returned `jev-1.13.0`, all three
+  question types, and token usage; response validation accepted it.
 - `@jkudish/jev-mcp`: build and unit/mock suite passed (the repository's
   live end-to-end test was not run).
 - `burnigtm/jev-mcp`: build and its test runner passed: 141 tests, 139 passed,
@@ -35,7 +54,7 @@ with the previously exposed credential.
 
 ## Codex-focused verification
 
-- 38 local unit and integration tests pass with no network access and no API key.
+- 41 local unit and integration tests pass with no network access and no API key.
 - A real subprocess STDIO handshake was exercised through `initialize`,
   `notifications/initialized`, `tools/list`, `health`, and `shutdown`.
 - The initialization instructions are 501 characters, below Codex's documented
@@ -44,8 +63,11 @@ with the previously exposed credential.
   the server advertises only its actual `tools` capability.
 - The wheel was built and installed in an isolated virtual environment, then
   its version and MCP initialization were checked.
-- No live provider request was made during this verification; `health --live`
-  and `doctor --live` remain explicit paid checks.
+- The default HTTP attempt timeout is 10 seconds, matching the official
+  TypeSafe Python SDK and leaving room for bounded retry behavior under
+  Codex's 60-second default tool timeout.
+- Live checks remain explicit paid operations; CI continues to use local fakes
+  and never receives a provider credential.
 
 These are repository smoke-test results, not a quality ranking or a claim that
 one project is safer for every deployment.
@@ -60,3 +82,4 @@ one project is safer for every deployment.
 5. Never put the API key in MCP arguments, stdout, or normal error details.
 6. Make the useful convenience tools deterministic wrappers, not hidden agent
    loops or permission systems.
+7. Keep real-provider tests manual and opt-in; never put a paid live call in CI.

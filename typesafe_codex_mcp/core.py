@@ -28,7 +28,10 @@ SERVER_NAME = "typesafe-codex-mcp"
 SERVER_VERSION = "0.3.0"
 DEFAULT_BASE_URL = "https://api.typesafe.ai"
 DEFAULT_MODEL = "jev-latest"
-DEFAULT_TIMEOUT_SECONDS = 30.0
+# Match the official Python SDK's default per-operation timeout.  Keeping one
+# attempt below Codex's default MCP tool timeout leaves room for bounded
+# retries and backoff without making a tool appear hung.
+DEFAULT_TIMEOUT_SECONDS = 10.0
 DEFAULT_MAX_RETRIES = 2
 DEFAULT_RETRY_BACKOFF_SECONDS = 0.5
 DEFAULT_MAX_BACKOFF_SECONDS = 20.0
@@ -274,9 +277,11 @@ def validate_request(arguments: Any, settings: Settings | None = None) -> JsonOb
             raise BridgeError(
                 f"question {question_id!r} has unsupported type; use noul, choice, or score"
             )
-        if "instructions" not in question or not _is_structured(question["instructions"]):
+        if "instructions" not in question or not _is_structured(
+            question["instructions"], allow_null=True
+        ):
             raise BridgeError(
-                f"question {question_id!r} instructions must be a string, object, or array"
+                f"question {question_id!r} instructions must be a string, object, array, or null"
             )
 
         criteria = question.get("criteria")
@@ -286,9 +291,9 @@ def validate_request(arguments: Any, settings: Settings | None = None) -> JsonOb
                     raise BridgeError(
                         f"noul question {question_id!r} criteria must contain only true/false"
                     )
-                if not all(_is_structured(value) for value in criteria.values()):
+                if not all(_is_structured(value, allow_null=True) for value in criteria.values()):
                     raise BridgeError(
-                        f"noul question {question_id!r} criteria values must be structured JSON"
+                        f"noul question {question_id!r} criteria values must be structured JSON or null"
                     )
         elif question_type == "choice":
             if not isinstance(criteria, dict) or not criteria:
@@ -315,9 +320,9 @@ def validate_request(arguments: Any, settings: Settings | None = None) -> JsonOb
                 raise BridgeError(
                     f"score question {question_id!r} needs between 2 and 10 criteria levels"
                 )
-            if not all(_is_structured(level) for level in criteria):
+            if not all(_is_structured(level, allow_null=True) for level in criteria):
                 raise BridgeError(
-                    f"score question {question_id!r} criteria levels must be structured JSON"
+                    f"score question {question_id!r} criteria levels must be structured JSON or null"
                 )
 
         normalized_questions[question_id] = {
@@ -375,6 +380,9 @@ def validate_api_response(response: Any, questions: Mapping[str, Any]) -> JsonOb
 
     if not isinstance(response, dict):
         raise APIError(None, "TypeSafe returned a non-object JSON response")
+    model = response.get("model")
+    if not isinstance(model, str) or not model.strip():
+        raise APIError(None, "TypeSafe response is missing a model")
     answers = response.get("answers")
     if not isinstance(answers, dict):
         raise APIError(None, "TypeSafe response is missing an answers object")
@@ -420,17 +428,25 @@ def validate_api_response(response: Any, questions: Mapping[str, Any]) -> JsonOb
             confidence = answer.get("confidence")
             if not _is_number(confidence) or not 0 <= confidence <= 1:
                 raise APIError(None, f"TypeSafe answer {question_id!r} has invalid confidence")
+            expected_score = sum(
+                int(level) * probability
+                for level, probability in answer["probabilities"].items()
+            )
+            if abs(score - expected_score) > 0.02:
+                raise APIError(None, f"TypeSafe answer {question_id!r} score disagrees with probabilities")
 
     usage = response.get("usage")
-    if usage is not None:
-        if not isinstance(usage, dict):
-            raise APIError(None, "TypeSafe response usage is not an object")
-        for field_name in ("input_tokens", "output_tokens"):
-            if field_name in usage and (
-                not isinstance(usage[field_name], int) or isinstance(usage[field_name], bool)
-                or usage[field_name] < 0
-            ):
-                raise APIError(None, f"TypeSafe response usage.{field_name} is invalid")
+    if not isinstance(usage, dict):
+        raise APIError(None, "TypeSafe response is missing a usage object")
+    for field_name in ("input_tokens", "output_tokens"):
+        if field_name not in usage:
+            raise APIError(None, f"TypeSafe response usage is missing {field_name}")
+        if (
+            not isinstance(usage[field_name], int)
+            or isinstance(usage[field_name], bool)
+            or usage[field_name] < 0
+        ):
+            raise APIError(None, f"TypeSafe response usage.{field_name} is invalid")
     return response
 
 

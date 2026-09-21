@@ -27,6 +27,14 @@ STRUCTURED_VALUE_SCHEMA: dict[str, Any] = {
         {"type": "array"},
     ]
 }
+ENTRY_SCHEMA: dict[str, Any] = {
+    "anyOf": [
+        {"type": "string"},
+        {"type": "object"},
+        {"type": "array"},
+        {"type": "null"},
+    ]
+}
 OPTION_DESCRIPTION_SCHEMA: dict[str, Any] = {
     "anyOf": [
         {"type": "string"},
@@ -36,21 +44,50 @@ OPTION_DESCRIPTION_SCHEMA: dict[str, Any] = {
     ]
 }
 CRITERION_SCHEMA: dict[str, Any] = {
-    "anyOf": [
-        {"type": "string"},
-        {"type": "object"},
-        {"type": "array"},
-    ]
+    **ENTRY_SCHEMA,
 }
 QUESTION_SCHEMA: dict[str, Any] = {
-    "type": "object",
-    "properties": {
-        "type": {"type": "string", "enum": ["noul", "choice", "score"]},
-        "instructions": STRUCTURED_VALUE_SCHEMA,
-        "criteria": {},
-    },
-    "required": ["type", "instructions"],
-    "additionalProperties": False,
+    "oneOf": [
+        {
+            "type": "object",
+            "properties": {
+                "type": {"const": "noul"},
+                "instructions": ENTRY_SCHEMA,
+                "criteria": {
+                    "type": "object",
+                    "properties": {"true": CRITERION_SCHEMA, "false": CRITERION_SCHEMA},
+                    "additionalProperties": False,
+                },
+            },
+            "required": ["type", "instructions"],
+            "additionalProperties": False,
+        },
+        {
+            "type": "object",
+            "properties": {
+                "type": {"const": "choice"},
+                "instructions": ENTRY_SCHEMA,
+                "criteria": {
+                    "type": "object",
+                    "minProperties": 1,
+                    "maxProperties": 255,
+                    "additionalProperties": OPTION_DESCRIPTION_SCHEMA,
+                },
+            },
+            "required": ["type", "instructions", "criteria"],
+            "additionalProperties": False,
+        },
+        {
+            "type": "object",
+            "properties": {
+                "type": {"const": "score"},
+                "instructions": ENTRY_SCHEMA,
+                "criteria": {"type": "array", "minItems": 2, "maxItems": 10, "items": ENTRY_SCHEMA},
+            },
+            "required": ["type", "instructions", "criteria"],
+            "additionalProperties": False,
+        },
+    ]
 }
 
 SERVER_INSTRUCTIONS = (
@@ -110,7 +147,7 @@ TOOLS = [
         "Choose one label from a closed set and return its probability distribution.",
         {
             "state": STRUCTURED_VALUE_SCHEMA,
-            "instructions": STRUCTURED_VALUE_SCHEMA,
+            "instructions": ENTRY_SCHEMA,
             "labels": {"type": "object", "additionalProperties": OPTION_DESCRIPTION_SCHEMA},
             "model": {"type": "string"},
         },
@@ -121,8 +158,8 @@ TOOLS = [
         "Rate state on an ordered rubric and return the weighted score, probabilities, and confidence.",
         {
             "state": STRUCTURED_VALUE_SCHEMA,
-            "instructions": STRUCTURED_VALUE_SCHEMA,
-            "levels": {"type": "array", "minItems": 2, "maxItems": 10, "items": STRUCTURED_VALUE_SCHEMA},
+            "instructions": ENTRY_SCHEMA,
+            "levels": {"type": "array", "minItems": 2, "maxItems": 10, "items": ENTRY_SCHEMA},
             "model": {"type": "string"},
         },
         ["state", "instructions", "levels"],
@@ -132,7 +169,7 @@ TOOLS = [
         "Estimate the probability that a bounded yes/no proposition is true.",
         {
             "state": STRUCTURED_VALUE_SCHEMA,
-            "instructions": STRUCTURED_VALUE_SCHEMA,
+            "instructions": ENTRY_SCHEMA,
             "true_criteria": CRITERION_SCHEMA,
             "false_criteria": CRITERION_SCHEMA,
             "model": {"type": "string"},
@@ -145,7 +182,7 @@ TOOLS = [
         "signals, not proof of truth.",
         {
             "state": STRUCTURED_VALUE_SCHEMA,
-            "claims": {"type": "object", "additionalProperties": STRUCTURED_VALUE_SCHEMA},
+            "claims": {"type": "object", "additionalProperties": ENTRY_SCHEMA},
             "true_criteria": CRITERION_SCHEMA,
             "false_criteria": CRITERION_SCHEMA,
             "model": {"type": "string"},
@@ -158,7 +195,7 @@ TOOLS = [
         "This is not an authorization or security boundary; keep normal human and policy controls.",
         {
             "state": STRUCTURED_VALUE_SCHEMA,
-            "checks": {"type": "object", "additionalProperties": STRUCTURED_VALUE_SCHEMA},
+            "checks": {"type": "object", "additionalProperties": ENTRY_SCHEMA},
             "pass_at": {"type": "number", "minimum": 0, "maximum": 1, "default": 0.85},
             "review_at": {"type": "number", "minimum": 0, "maximum": 1, "default": 0.60},
             "model": {"type": "string"},
@@ -170,7 +207,7 @@ TOOLS = [
         "Choose the next Codex action from a closed set. This suggests an action; it does not execute it.",
         {
             "state": STRUCTURED_VALUE_SCHEMA,
-            "instructions": STRUCTURED_VALUE_SCHEMA,
+            "instructions": ENTRY_SCHEMA,
             "actions": {
                 "type": "object",
                 "minProperties": 2,
@@ -186,7 +223,7 @@ TOOLS = [
         "Evaluate a Codex diff, plan, or test report against checks and return pass/review/fail signals. It never edits files.",
         {
             "state": STRUCTURED_VALUE_SCHEMA,
-            "checks": {"type": "object", "minProperties": 1, "additionalProperties": STRUCTURED_VALUE_SCHEMA},
+            "checks": {"type": "object", "minProperties": 1, "additionalProperties": ENTRY_SCHEMA},
             "pass_at": {"type": "number", "minimum": 0, "maximum": 1, "default": 0.85},
             "review_at": {"type": "number", "minimum": 0, "maximum": 1, "default": 0.60},
             "model": {"type": "string"},
@@ -227,12 +264,13 @@ def _require_state(arguments: dict[str, Any]) -> Any:
     return arguments["state"]
 
 
-def _require_structured(arguments: dict[str, Any], name: str) -> Any:
+def _require_structured(arguments: dict[str, Any], name: str, *, allow_null: bool = False) -> Any:
     if name not in arguments:
         raise BridgeError(f"missing required argument: {name}")
     value = arguments[name]
-    if not isinstance(value, (str, dict, list)):
-        raise BridgeError(f"{name} must be a string, object, or array")
+    if not isinstance(value, (str, dict, list)) and not (allow_null and value is None):
+        suffix = ", or null" if allow_null else ""
+        raise BridgeError(f"{name} must be a string, object, or array{suffix}")
     return value
 
 
@@ -287,7 +325,11 @@ def _call_classify(arguments: Any, client: TypeSafeClient) -> dict[str, Any]:
         client,
         state=_require_state(args),
         question_id="classification",
-        question={"type": "choice", "instructions": _require_structured(args, "instructions"), "criteria": labels},
+        question={
+            "type": "choice",
+            "instructions": _require_structured(args, "instructions", allow_null=True),
+            "criteria": labels,
+        },
         model=model,
     )
     return {"type": "classification", **result}
@@ -303,8 +345,8 @@ def _call_codex_route(arguments: Any, client: TypeSafeClient) -> dict[str, Any]:
         "instructions",
         "Which next action should Codex take based on the supplied state? Choose only one action.",
     )
-    if not _is_structured_argument(instructions):
-        raise BridgeError("instructions must be a string, object, or array")
+    if not _is_structured_argument(instructions, allow_null=True):
+        raise BridgeError("instructions must be a string, object, array, or null")
     model = _optional_model(args)
     result = _run_single(
         client,
@@ -328,7 +370,11 @@ def _call_score(arguments: Any, client: TypeSafeClient) -> dict[str, Any]:
         client,
         state=_require_state(args),
         question_id="score",
-        question={"type": "score", "instructions": _require_structured(args, "instructions"), "criteria": levels},
+        question={
+            "type": "score",
+            "instructions": _require_structured(args, "instructions", allow_null=True),
+            "criteria": levels,
+        },
         model=model,
     )
     return {"type": "score", **result}
@@ -345,7 +391,7 @@ def _call_check(arguments: Any, client: TypeSafeClient) -> dict[str, Any]:
         criteria["false"] = args["false_criteria"]
     question: dict[str, Any] = {
         "type": "noul",
-        "instructions": _require_structured(args, "instructions"),
+        "instructions": _require_structured(args, "instructions", allow_null=True),
     }
     if criteria:
         question["criteria"] = criteria
@@ -470,8 +516,8 @@ def _call_codex_review(arguments: Any, client: TypeSafeClient) -> dict[str, Any]
     return result
 
 
-def _is_structured_argument(value: Any) -> bool:
-    return isinstance(value, (str, dict, list))
+def _is_structured_argument(value: Any, *, allow_null: bool = False) -> bool:
+    return isinstance(value, (str, dict, list)) or (allow_null and value is None)
 
 
 def _call_health(arguments: Any) -> dict[str, Any]:

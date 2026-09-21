@@ -17,6 +17,12 @@ covers request and response validation, credential redaction, retry behavior,
 configuration errors, MCP schemas and annotations, Codex initialization,
 subprocess STDIO framing, shutdown, tool failures, and clean wheel contents.
 
+The live verification performed during development sent one MCP `evaluate`
+request containing Noul, Choice, and Score questions to `jev-latest`. TypeSafe
+returned `jev-1.13.0`, calibrated probabilities/confidence, and `usage`; the
+bridge accepted the response after its strict contract validation. Live checks
+are deliberately excluded from CI because they are paid and require a secret.
+
 ## Codex host check
 
 After registering the server, inspect it without making a provider request:

@@ -35,6 +35,7 @@ def noul_payload(question_id="ready", value=0.9):
     return {
         "model": "jev-1.13.0",
         "answers": {question_id: {"type": "noul", "noul": value}},
+        "usage": {"input_tokens": 10, "output_tokens": 2},
     }
 
 
@@ -82,7 +83,7 @@ class ResponseAndTransportEdgeTests(unittest.TestCase):
             max_retries=2,
             retry_backoff_seconds=0,
             retry_jitter=0,
-            max_response_bytes=100,
+            max_response_bytes=512,
         )
         self.payload = {
             "state": "hello",
@@ -179,21 +180,85 @@ class ResponseAndTransportEdgeTests(unittest.TestCase):
             }
         }
         valid = {
+            "model": "jev-1.13.0",
             "answers": {
                 "severity": {
                     "type": "score",
-                    "score": 1.5,
+                    "score": 1.1,
                     "legend": {"0": "low", "1": "medium", "2": "high"},
                     "probabilities": {"0": 0.1, "1": 0.7, "2": 0.2},
                     "confidence": 0.8,
                 }
-            }
+            },
+            "usage": {"input_tokens": 10, "output_tokens": 2},
         }
         self.assertEqual(core.validate_api_response(valid, questions), valid)
         invalid = json.loads(json.dumps(valid))
         invalid["answers"]["severity"]["legend"]["3"] = "extra"
         with self.assertRaises(core.APIError):
             core.validate_api_response(invalid, questions)
+
+    def test_official_structured_null_entries_are_accepted(self):
+        payload = core.validate_request(
+            {
+                "state": {"message": "hello", "metadata": None},
+                "questions": {
+                    "noul": {
+                        "type": "noul",
+                        "instructions": None,
+                        "criteria": {"true": None, "false": None},
+                    },
+                    "choice": {
+                        "type": "choice",
+                        "instructions": {"question": "Which?"},
+                        "criteria": {"a": None, "b": {"examples": []}},
+                    },
+                    "score": {
+                        "type": "score",
+                        "instructions": ["How severe?"],
+                        "criteria": [None, "high"],
+                    },
+                },
+            },
+            self.settings,
+        )
+        self.assertIsNone(payload["questions"]["noul"]["instructions"])
+
+    def test_response_requires_official_model_and_usage_fields(self):
+        questions = {"ready": {"type": "noul", "instructions": "Ready?"}}
+        with self.assertRaisesRegex(core.APIError, "missing a model"):
+            core.validate_api_response(
+                {"answers": {"ready": {"type": "noul", "noul": 0.9}}, "usage": {}}, questions
+            )
+        with self.assertRaisesRegex(core.APIError, "missing a usage"):
+            core.validate_api_response(
+                {"model": "jev-1.13.0", "answers": {"ready": {"type": "noul", "noul": 0.9}}},
+                questions,
+            )
+
+    def test_score_must_match_probability_weighted_value(self):
+        questions = {
+            "severity": {
+                "type": "score",
+                "instructions": "How severe?",
+                "criteria": ["low", "medium", "high"],
+            }
+        }
+        response = {
+            "model": "jev-1.13.0",
+            "answers": {
+                "severity": {
+                    "type": "score",
+                    "score": 0.1,
+                    "legend": {"0": "low", "1": "medium", "2": "high"},
+                    "probabilities": {"0": 0.1, "1": 0.7, "2": 0.2},
+                    "confidence": 0.8,
+                }
+            },
+            "usage": {"input_tokens": 1, "output_tokens": 1},
+        }
+        with self.assertRaisesRegex(core.APIError, "disagrees with probabilities"):
+            core.validate_api_response(response, questions)
 
 
 class CLIAndMCPErrorTests(unittest.TestCase):
