@@ -25,7 +25,7 @@ from urllib.request import Request, urlopen
 
 
 SERVER_NAME = "typesafe-codex-mcp"
-SERVER_VERSION = "0.2.0"
+SERVER_VERSION = "0.3.0"
 DEFAULT_BASE_URL = "https://api.typesafe.ai"
 DEFAULT_MODEL = "jev-latest"
 DEFAULT_TIMEOUT_SECONDS = 30.0

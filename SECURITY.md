@@ -2,8 +2,8 @@
 
 ## Scope
 
-This project is a local adapter. It forwards the state and questions supplied
-by an MCP client to TypeSafe AI's API. It is not a sandbox, authorization
+This project is a local Codex MCP adapter. It forwards the state and questions
+supplied by Codex to TypeSafe AI's API. It is not a sandbox, authorization
 layer, prompt-injection firewall, or substitute for human review.
 
 ## API keys

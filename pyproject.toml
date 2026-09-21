@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "typesafe-codex-mcp"
-version = "0.2.0"
-description = "A dependency-free TypeSafe AI bridge for Codex, MCP clients, and CI"
+version = "0.3.0"
+description = "A dependency-free TypeSafe AI MCP service for Codex"
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }

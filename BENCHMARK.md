@@ -1,6 +1,7 @@
 # Community comparison and release notes
 
-This document records the engineering comparison used for the 0.2.0 release.
+This document records the engineering comparison and local verification used
+for the 0.3.0 release.
 The repositories were cloned into a temporary directory and tested without a
 live API key on 2026-09-21. A live TypeSafe request was intentionally not run
 with the previously exposed credential.
@@ -31,6 +32,20 @@ with the previously exposed credential.
   pass.
 - Go and Rust projects could be inspected but not compiled because this host
   does not have `go` or `cargo` installed.
+
+## Codex-focused verification
+
+- 38 local unit and integration tests pass with no network access and no API key.
+- A real subprocess STDIO handshake was exercised through `initialize`,
+  `notifications/initialized`, `tools/list`, `health`, and `shutdown`.
+- The initialization instructions are 501 characters, below Codex's documented
+  512-character self-contained prefix guidance.
+- Codex CLI 0.155.1 can list and inspect the configured `typesafe` STDIO server;
+  the server advertises only its actual `tools` capability.
+- The wheel was built and installed in an isolated virtual environment, then
+  its version and MCP initialization were checked.
+- No live provider request was made during this verification; `health --live`
+  and `doctor --live` remain explicit paid checks.
 
 These are repository smoke-test results, not a quality ranking or a claim that
 one project is safer for every deployment.

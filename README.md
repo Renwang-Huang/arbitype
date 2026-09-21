@@ -2,12 +2,12 @@
 
 ![CI](https://github.com/Renwang-Huang/typesafe-codex-mcp/actions/workflows/ci.yml/badge.svg)
 
-Dependency-free local bridge from [TypeSafe AI](https://typesafe.ai)'s Jev
-System One API to Codex, Claude Code, Cursor, and any MCP client.
+Dependency-free, Codex-first STDIO MCP service for [TypeSafe AI](https://typesafe.ai)'s
+Jev System One API.
 
 It keeps the API key in the process environment, validates requests and
-responses, retries temporary provider failures safely, and exposes both a
-raw `evaluate` tool and small typed tools for common agent workflows.
+responses, retries temporary provider failures safely, and exposes typed tools
+for Codex routing, review signals, and bounded judgments.
 
 > TypeSafe Codex MCP is an independent community project. It is not an
 > official TypeSafe AI or OpenAI product.
@@ -15,14 +15,17 @@ raw `evaluate` tool and small typed tools for common agent workflows.
 ## Why this bridge
 
 TypeSafe's official interface is an HTTP API. This project provides the local
-adapter that an MCP client needs, without a Node, Python, or Go runtime
-dependency beyond Python 3.10+ itself.
+STDIO MCP adapter that Codex can start, without third-party runtime dependencies
+beyond Python 3.10+ itself.
 
 - No third-party runtime dependencies.
 - `evaluate` stays close to the official API: `noul`, `choice`, and `score`.
 - `classify`, `score`, and `check` remove repetitive question-map boilerplate.
 - `verify` batches claim checks into one request.
 - `gate` converts bounded check probabilities into `pass`, `review`, or `fail`.
+- `codex_route` selects the next action from a closed set without executing it.
+- `codex_review` evaluates a diff, plan, or test report against explicit checks.
+- `health` diagnoses local configuration without a network request by default.
 - API responses are checked for missing answers, invalid probabilities, unknown
   choices, malformed scores, and inconsistent distributions.
 - 408, 429, 500, 502, 503, 504, and 529 receive bounded exponential backoff;
@@ -57,7 +60,7 @@ The package has no runtime dependencies. Once published, an isolated installer
 such as `uvx` can run it directly from a pinned Git tag:
 
 ```bash
-uvx --from 'git+https://github.com/Renwang-Huang/typesafe-codex-mcp@v0.2.0' \
+uvx --from 'git+https://github.com/Renwang-Huang/typesafe-codex-mcp@v0.3.0' \
   typesafe-codex-mcp
 ```
 
@@ -70,7 +73,10 @@ For a checkout, add this to `~/.codex/config.toml`:
 command = "python3"
 args = ["/absolute/path/to/typesafe-codex-mcp/server.py"]
 env_vars = ["TYPESAFE_API_KEY"]
+startup_timeout_sec = 10
 tool_timeout_sec = 60
+default_tools_approval_mode = "prompt"
+enabled_tools = ["codex_route", "codex_review", "classify", "score", "check", "verify", "gate", "evaluate", "health"]
 ```
 
 For an installed command:
@@ -79,7 +85,9 @@ For an installed command:
 [mcp_servers.typesafe]
 command = "typesafe-codex-mcp"
 env_vars = ["TYPESAFE_API_KEY"]
+startup_timeout_sec = 10
 tool_timeout_sec = 60
+default_tools_approval_mode = "prompt"
 ```
 
 Keep the key out of `config.toml`; `env_vars` asks Codex to forward the
@@ -95,6 +103,9 @@ environment variable without putting its value in the MCP command line.
 | `check` | `state` + yes/no `instructions` | One Noul probability |
 | `verify` | `state` + `claims` map | One Noul answer per claim |
 | `gate` | `state` + `checks` map + thresholds | `pass`, `review`, or `fail` plus evidence |
+| `codex_route` | `state` + `actions` map | Suggested next Codex action; no execution |
+| `codex_review` | `state` + `checks` map + thresholds | Codex-oriented review decision and evidence |
+| `health` | Optional `live` boolean | Local configuration; live request only when explicit |
 
 Example `classify` call:
 

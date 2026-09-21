@@ -3,14 +3,18 @@
 from __future__ import annotations
 
 import json
+import os
 import sys
+import time
 from typing import Any
 
 from .core import (
     BridgeError,
+    ConfigError,
     MAX_INPUT_LINE_BYTES,
     SERVER_NAME,
     SERVER_VERSION,
+    Settings,
     TypeSafeClient,
     validate_request,
 )
@@ -50,11 +54,12 @@ QUESTION_SCHEMA: dict[str, Any] = {
 }
 
 SERVER_INSTRUCTIONS = (
-    "TypeSafe Jev returns bounded typed judgments, not generated prose. Use evaluate for "
-    "raw questions, or classify/score/check for the common shapes. Use verify and gate as "
-    "review signals only: probabilities and confidence are not proof, authorization, or a "
-    "security boundary. Keep secrets out of state and batch independent questions. Do not use "
-    "Jev for code generation, exact arithmetic, date arithmetic, or open-ended writing."
+    "Codex-first read-only MCP service for TypeSafe Jev judgments. Use codex_route for the next "
+    "Codex action and codex_review for a diff or checklist; use classify/score/check/verify/gate "
+    "for typed signals. Tools never edit files, run commands, approve changes, or replace "
+    "tests/review. Keep secrets out of state. Probabilities are advisory, not proof or "
+    "authorization. Use evaluate for raw noul/choice/score and batch independent questions. "
+    "Do not use Jev for code generation, arithmetic, dates, or prose."
 )
 
 
@@ -67,6 +72,14 @@ def _tool(
     return {
         "name": name,
         "description": description,
+        "annotations": {
+            "title": f"TypeSafe Codex {name.replace('_', ' ').title()}",
+            "readOnlyHint": True,
+            "destructiveHint": False,
+            "idempotentHint": True,
+            "openWorldHint": True,
+        },
+        "outputSchema": {"type": "object"},
         "inputSchema": {
             "type": "object",
             "properties": properties,
@@ -151,6 +164,42 @@ TOOLS = [
             "model": {"type": "string"},
         },
         ["state", "checks"],
+    ),
+    _tool(
+        "codex_route",
+        "Choose the next Codex action from a closed set. This suggests an action; it does not execute it.",
+        {
+            "state": STRUCTURED_VALUE_SCHEMA,
+            "instructions": STRUCTURED_VALUE_SCHEMA,
+            "actions": {
+                "type": "object",
+                "minProperties": 2,
+                "maxProperties": 32,
+                "additionalProperties": OPTION_DESCRIPTION_SCHEMA,
+            },
+            "model": {"type": "string"},
+        },
+        ["state", "actions"],
+    ),
+    _tool(
+        "codex_review",
+        "Evaluate a Codex diff, plan, or test report against checks and return pass/review/fail signals. It never edits files.",
+        {
+            "state": STRUCTURED_VALUE_SCHEMA,
+            "checks": {"type": "object", "minProperties": 1, "additionalProperties": STRUCTURED_VALUE_SCHEMA},
+            "pass_at": {"type": "number", "minimum": 0, "maximum": 1, "default": 0.85},
+            "review_at": {"type": "number", "minimum": 0, "maximum": 1, "default": 0.60},
+            "model": {"type": "string"},
+        },
+        ["state", "checks"],
+    ),
+    _tool(
+        "health",
+        "Inspect local Codex MCP configuration without making a network request. Set live=true only for an explicit paid provider check.",
+        {
+            "live": {"type": "boolean", "default": False},
+        },
+        [],
     ),
 ]
 TOOL_MAP = {tool["name"]: tool for tool in TOOLS}
@@ -242,6 +291,30 @@ def _call_classify(arguments: Any, client: TypeSafeClient) -> dict[str, Any]:
         model=model,
     )
     return {"type": "classification", **result}
+
+
+def _call_codex_route(arguments: Any, client: TypeSafeClient) -> dict[str, Any]:
+    args = _require_object(arguments)
+    _reject_unknown(args, {"state", "instructions", "actions", "model"})
+    actions = args.get("actions")
+    if not isinstance(actions, dict) or not 2 <= len(actions) <= 32:
+        raise BridgeError("actions must be an object with between 2 and 32 options")
+    instructions = args.get(
+        "instructions",
+        "Which next action should Codex take based on the supplied state? Choose only one action.",
+    )
+    if not _is_structured_argument(instructions):
+        raise BridgeError("instructions must be a string, object, or array")
+    model = _optional_model(args)
+    result = _run_single(
+        client,
+        state=_require_state(args),
+        question_id="next_action",
+        question={"type": "choice", "instructions": instructions, "criteria": actions},
+        model=model,
+    )
+    answer = result["answer"]
+    return {"type": "codex_route", "route": answer["choice"], **result}
 
 
 def _call_score(arguments: Any, client: TypeSafeClient) -> dict[str, Any]:
@@ -364,7 +437,8 @@ def _call_gate(arguments: Any, client: TypeSafeClient) -> dict[str, Any]:
 
     normalized_checks: dict[str, Any] = {}
     decision = "pass"
-    for check_id, answer in response["answers"].items():
+    for check_id in checks:
+        answer = response["answers"][check_id]
         probability = answer["noul"]
         if probability < review_at:
             check_decision = "fail"
@@ -390,11 +464,70 @@ def _call_gate(arguments: Any, client: TypeSafeClient) -> dict[str, Any]:
     }
 
 
+def _call_codex_review(arguments: Any, client: TypeSafeClient) -> dict[str, Any]:
+    result = _call_gate(arguments, client)
+    result["type"] = "codex_review"
+    return result
+
+
+def _is_structured_argument(value: Any) -> bool:
+    return isinstance(value, (str, dict, list))
+
+
+def _call_health(arguments: Any) -> dict[str, Any]:
+    args = _require_object(arguments)
+    _reject_unknown(args, {"live"})
+    live = args.get("live", False)
+    if not isinstance(live, bool):
+        raise BridgeError("live must be a boolean")
+
+    checks: dict[str, Any] = {
+        "type": "health",
+        "server": SERVER_NAME,
+        "version": SERVER_VERSION,
+        "api_key_configured": bool(os.getenv("TYPESAFE_API_KEY", "").strip()),
+        "live": False,
+    }
+    try:
+        settings = Settings.from_env(require_key=False)
+    except ConfigError as exc:
+        checks.update({"status": "configuration_error", "message": str(exc)})
+        return checks
+
+    checks.update(
+        {
+            "status": "ok" if checks["api_key_configured"] else "missing_api_key",
+            "base_url": settings.base_url,
+            "model": settings.model,
+            "timeout_seconds": settings.timeout_seconds,
+            "max_retries": settings.max_retries,
+        }
+    )
+    if not live:
+        return checks
+    if not checks["api_key_configured"]:
+        return checks
+
+    started = time.monotonic()
+    TypeSafeClient(settings).evaluate(
+        {
+            "state": "Codex MCP health check",
+            "questions": {
+                "ready": {"type": "noul", "instructions": "Is this health check request ready?"}
+            },
+        }
+    )
+    checks.update({"live": True, "latency_ms": round((time.monotonic() - started) * 1000, 1)})
+    return checks
+
+
 def call_tool(name: str, arguments: Any) -> dict[str, Any]:
     """Dispatch one MCP tool call."""
 
     if name not in TOOL_MAP:
         raise BridgeError(f"unknown tool: {name}")
+    if name == "health":
+        return _call_health(arguments)
     client = TypeSafeClient()
     dispatch = {
         "evaluate": _call_evaluate,
@@ -403,6 +536,8 @@ def call_tool(name: str, arguments: Any) -> dict[str, Any]:
         "check": _call_check,
         "verify": _call_verify,
         "gate": _call_gate,
+        "codex_route": _call_codex_route,
+        "codex_review": _call_codex_review,
     }
     return dispatch[name](arguments, client)
 
@@ -451,11 +586,7 @@ def handle_message(message: dict[str, Any]) -> dict[str, Any] | None:
             request_id,
             {
                 "protocolVersion": protocol_version,
-                "capabilities": {
-                    "tools": {"listChanged": False},
-                    "resources": {"subscribe": False, "listChanged": False},
-                    "prompts": {"listChanged": False},
-                },
+                "capabilities": {"tools": {"listChanged": False}},
                 "serverInfo": {"name": SERVER_NAME, "version": SERVER_VERSION},
                 "instructions": SERVER_INSTRUCTIONS,
             },
@@ -488,6 +619,14 @@ def handle_message(message: dict[str, Any]) -> dict[str, Any] | None:
                 request_id,
                 {"isError": True, "content": [{"type": "text", "text": str(exc)}]},
             )
+        except Exception:
+            return _result(
+                request_id,
+                {
+                    "isError": True,
+                    "content": [{"type": "text", "text": "internal tool error"}],
+                },
+            )
 
     return None if is_notification else _rpc_error(request_id, -32601, f"method not found: {method}")
 
@@ -496,6 +635,8 @@ def main_stdio() -> int:
     """Run the line-delimited JSON-RPC stdio transport."""
 
     for raw_line in sys.stdin.buffer:
+        message: dict[str, Any] | None = None
+        should_exit = False
         if len(raw_line) > MAX_INPUT_LINE_BYTES:
             response = _rpc_error(None, -32600, "input message is too large")
         else:
@@ -506,6 +647,10 @@ def main_stdio() -> int:
                 message = json.loads(line)
                 if not isinstance(message, dict):
                     raise ValueError("message must be an object")
+                # MCP replies to ``shutdown`` first; the client then sends the
+                # ``exit`` notification. Exit only after that notification so
+                # the lifecycle remains compatible with strict clients.
+                should_exit = message.get("method") == "exit"
                 response = handle_message(message)
             except (json.JSONDecodeError, ValueError) as exc:
                 response = _rpc_error(None, -32700, f"invalid JSON-RPC message: {exc}")
@@ -520,6 +665,8 @@ def main_stdio() -> int:
                 sys.stdout.flush()
             except BrokenPipeError:
                 return 0
+        if should_exit:
+            return 0
     return 0
 
 

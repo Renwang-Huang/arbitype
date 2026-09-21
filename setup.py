@@ -24,10 +24,17 @@ class BuildPyWithoutBytecode(_build_py):
 
 setup(
     name="typesafe-codex-mcp",
-    version="0.2.0",
-    description="A dependency-free TypeSafe AI bridge for Codex, MCP clients, and CI",
+    version="0.3.0",
+    description="A dependency-free TypeSafe AI MCP service for Codex",
     long_description=open("README.md", encoding="utf-8").read(),
     long_description_content_type="text/markdown",
+    author="TypeSafe Codex MCP contributors",
+    author_email="renwang-huang@users.noreply.github.com",
+    url="https://github.com/Renwang-Huang/typesafe-codex-mcp",
+    project_urls={
+        "Issues": "https://github.com/Renwang-Huang/typesafe-codex-mcp/issues",
+        "Changelog": "https://github.com/Renwang-Huang/typesafe-codex-mcp/blob/main/CHANGELOG.md",
+    },
     python_requires=">=3.10",
     license="MIT",
     packages=find_packages(include=["typesafe_codex_mcp", "typesafe_codex_mcp.*"]),

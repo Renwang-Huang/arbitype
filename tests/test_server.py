@@ -235,7 +235,17 @@ class ProtocolTests(unittest.TestCase):
         listed = mcp.handle_message({"jsonrpc": "2.0", "id": 2, "method": "tools/list", "params": {}})
         self.assertEqual(
             {tool["name"] for tool in listed["result"]["tools"]},
-            {"evaluate", "classify", "score", "check", "verify", "gate"},
+            {
+                "evaluate",
+                "classify",
+                "score",
+                "check",
+                "verify",
+                "gate",
+                "codex_route",
+                "codex_review",
+                "health",
+            },
         )
 
     def test_notifications_and_invalid_protocol(self):

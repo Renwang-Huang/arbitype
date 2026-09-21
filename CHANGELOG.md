@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.3.0 — 2026-09-21
+
+- Narrowed the product contract to a Codex-first stdio MCP service.
+- Added Codex-oriented `codex_route`, `codex_review`, and non-network `health` tools.
+- Added read-only/idempotent MCP tool annotations and a Codex-focused initialization guide.
+- Removed unsupported resource and prompt capabilities and implemented the MCP shutdown/exit lifecycle.
+- Added safer handling for unexpected tool failures.
+
 ## 0.2.0 — 2026-09-21
 
 - Added a reusable standard-library TypeSafe client with bounded retries,

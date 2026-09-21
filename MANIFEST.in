@@ -1,4 +1,4 @@
-include README.md LICENSE SECURITY.md CHANGELOG.md BENCHMARK.md .env.example
+include README.md LICENSE SECURITY.md CHANGELOG.md BENCHMARK.md TESTING.md CONTRIBUTING.md .env.example server.py smoke_test.py
 recursive-include typesafe_codex_mcp *.py
 recursive-include tests *.py
 global-exclude *.py[cod]

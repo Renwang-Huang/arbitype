@@ -93,7 +93,7 @@ def _evaluate_cli(args: argparse.Namespace) -> int:
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="typesafe-codex-mcp",
-        description="Dependency-free TypeSafe AI bridge for Codex, MCP clients, and CI.",
+        description="Dependency-free TypeSafe AI MCP service for Codex.",
     )
     parser.add_argument("--version", action="version", version=f"%(prog)s {SERVER_VERSION}")
     subparsers = parser.add_subparsers(dest="command")
