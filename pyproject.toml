@@ -3,14 +3,14 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "typesafe-mcp"
+name = "arbitype"
 dynamic = ["version"]
-description = "A dependency-free, host-neutral TypeSafe AI MCP service"
+description = "Typed decision tools for AI agents, powered by TypeSafe Jev"
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
-authors = [{ name = "TypeSafe MCP contributors" }]
-keywords = ["typesafe", "jev", "mcp", "ai", "agents", "claude", "classification", "guardrails"]
+authors = [{ name = "Arbitype contributors" }]
+keywords = ["arbitype", "mcp", "model-context-protocol", "ai-agents", "agent", "decision", "typed-decisions", "classification", "routing", "verification", "guardrails", "jev", "typesafe-ai", "python"]
 classifiers = [
   "Development Status :: 4 - Beta",
   "License :: OSI Approved :: MIT License",
@@ -25,20 +25,21 @@ classifiers = [
 dependencies = []
 
 [project.urls]
-Homepage = "https://github.com/Renwang-Huang/typesafe-mcp"
-Repository = "https://github.com/Renwang-Huang/typesafe-mcp"
-Issues = "https://github.com/Renwang-Huang/typesafe-mcp/issues"
-Changelog = "https://github.com/Renwang-Huang/typesafe-mcp/blob/main/CHANGELOG.md"
+Homepage = "https://github.com/Renwang-Huang/arbitype"
+Repository = "https://github.com/Renwang-Huang/arbitype"
+Issues = "https://github.com/Renwang-Huang/arbitype/issues"
+Changelog = "https://github.com/Renwang-Huang/arbitype/blob/main/CHANGELOG.md"
 
 [project.scripts]
-typesafe-mcp = "typesafe_mcp.cli:main"
-typesafe-codex-mcp = "typesafe_mcp.cli:main"
+arbitype = "arbitype.cli:main"
+typesafe-mcp = "arbitype.cli:main"
+typesafe-codex-mcp = "arbitype.cli:main"
 
 [tool.setuptools.packages.find]
-include = ["typesafe_mcp*", "typesafe_codex_mcp*"]
+include = ["arbitype*", "typesafe_mcp*", "typesafe_codex_mcp*"]
 
 [tool.setuptools.dynamic]
-version = { attr = "typesafe_mcp._version.__version__" }
+version = { attr = "arbitype._version.__version__" }
 
 [tool.setuptools.exclude-package-data]
 "*" = ["__pycache__", "__pycache__/*", "*.py[cod]"]

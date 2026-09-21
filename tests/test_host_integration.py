@@ -12,8 +12,8 @@ from unittest.mock import patch
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-import typesafe_mcp  # noqa: E402
-from typesafe_mcp import core, mcp  # noqa: E402
+import arbitype  # noqa: E402
+from arbitype import core, mcp  # noqa: E402
 
 
 def route_response(choice="inspect"):
@@ -34,7 +34,7 @@ def route_response(choice="inspect"):
 class HostContractTests(unittest.TestCase):
     def test_server_instructions_fit_host_prefix_limit(self):
         self.assertLessEqual(len(mcp.SERVER_INSTRUCTIONS), 512)
-        self.assertIn("Host-neutral", mcp.SERVER_INSTRUCTIONS)
+        self.assertIn("Arbitype", mcp.SERVER_INSTRUCTIONS)
         self.assertIn("route", mcp.SERVER_INSTRUCTIONS)
         self.assertIn("review", mcp.SERVER_INSTRUCTIONS)
         self.assertIn("never edit files", mcp.SERVER_INSTRUCTIONS)
@@ -49,15 +49,32 @@ class HostContractTests(unittest.TestCase):
             self.assertIn("required", tool["outputSchema"])
             self.assertEqual(tool["inputSchema"]["additionalProperties"], False)
 
-    def test_legacy_package_is_only_a_compatibility_shim(self):
+    def test_canonical_and_legacy_packages_share_exports(self):
+        import typesafe_mcp
         import typesafe_codex_mcp
+        from arbitype import TypeSafeClient
+        from typesafe_mcp import core as typesafe_core
         from typesafe_codex_mcp import core as legacy_core
         from typesafe_codex_mcp import mcp as legacy_mcp
 
-        self.assertEqual(typesafe_mcp.__version__, core.SERVER_VERSION)
-        self.assertEqual(typesafe_codex_mcp.__version__, typesafe_mcp.__version__)
+        self.assertEqual(arbitype.__version__, core.SERVER_VERSION)
+        self.assertEqual(typesafe_mcp.__version__, arbitype.__version__)
+        self.assertEqual(typesafe_codex_mcp.__version__, arbitype.__version__)
+        self.assertIs(typesafe_core.Settings, core.Settings)
         self.assertIs(legacy_core.Settings, core.Settings)
         self.assertIs(legacy_mcp.handle_message, mcp.handle_message)
+        self.assertIs(typesafe_mcp.TypeSafeClient, TypeSafeClient)
+        self.assertIs(typesafe_codex_mcp.TOOLS, mcp.TOOLS)
+
+    def test_server_name_is_arbitype(self):
+        self.assertEqual(mcp.SERVER_NAME, "arbitype")
+        self.assertEqual(core.SERVER_NAME, "arbitype")
+
+    def test_registry_name_and_pypi_metadata_use_arbitype(self):
+        metadata = json.loads((ROOT / "server.json").read_text(encoding="utf-8"))
+        self.assertEqual(metadata["name"], "io.github.Renwang-Huang/arbitype")
+        self.assertEqual(metadata["packages"][0]["identifier"], "arbitype")
+        self.assertIn('name = "arbitype"', (ROOT / "pyproject.toml").read_text(encoding="utf-8"))
 
     def test_initialize_advertises_tools_only(self):
         response = mcp.handle_message(
@@ -88,7 +105,7 @@ class HostContractTests(unittest.TestCase):
         result = response["result"]
         self.assertEqual(result["resultType"], "complete")
         self.assertEqual(result["supportedVersions"], list(mcp.SUPPORTED_PROTOCOL_VERSIONS))
-        self.assertEqual(result["_meta"]["io.modelcontextprotocol/serverInfo"]["name"], "typesafe-mcp")
+        self.assertEqual(result["_meta"]["io.modelcontextprotocol/serverInfo"]["name"], "arbitype")
 
     def test_modern_metadata_requests_receive_complete_results(self):
         metadata = {
@@ -277,6 +294,32 @@ class HostContractTests(unittest.TestCase):
         self.assertTrue(response["result"]["isError"])
         self.assertNotIn("secret-key", json.dumps(response))
         self.assertEqual(response["result"]["content"][0]["text"], "internal tool error")
+
+
+class CLISurfaceTests(unittest.TestCase):
+    def _assert_module_cli(self, module_name):
+        child_env = dict(os.environ)
+        child_env.pop("TYPESAFE_API_KEY", None)
+        completed = subprocess.run(
+            [sys.executable, "-m", module_name, "--version"],
+            cwd=ROOT,
+            capture_output=True,
+            text=True,
+            env=child_env,
+            timeout=5,
+            check=False,
+        )
+        self.assertEqual(completed.returncode, 0, completed.stderr)
+        self.assertIn("0.6.0", completed.stdout)
+
+    def test_arbitype_cli(self):
+        self._assert_module_cli("arbitype")
+
+    def test_typesafe_mcp_legacy_cli(self):
+        self._assert_module_cli("typesafe_mcp")
+
+    def test_typesafe_codex_mcp_legacy_cli(self):
+        self._assert_module_cli("typesafe_codex_mcp")
 
 
 class StdioIntegrationTests(unittest.TestCase):

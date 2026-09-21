@@ -43,7 +43,7 @@ async def run() -> None:
             raise RuntimeError("health tool returned an MCP error")
         if not isinstance(health.structured_content, dict):
             raise RuntimeError("health tool did not return structured content")
-        if health.structured_content.get("server") != "typesafe-mcp":
+        if health.structured_content.get("server") != "arbitype":
             raise RuntimeError("unexpected server identity")
 
         print(

@@ -1,16 +1,16 @@
-# Security policy
+# Arbitype security policy
 
 ## Scope
 
-This project is a local MCP adapter. It forwards the state and questions
-supplied by an agent host to TypeSafe AI's API. It is not a sandbox,
+Arbitype is a local MCP adapter and typed decision layer. It forwards the
+state and questions supplied by an agent host to TypeSafe AI's API. It is not a sandbox,
 authorization layer, prompt-injection firewall, or substitute for human review.
 
 ## API keys
 
-Set `TYPESAFE_API_KEY` in the environment of the MCP process. Do not put it in
+Set `TYPESAFE_API_KEY` in the environment of the Arbitype MCP process. Do not put it in
 tool arguments, source code, shell history, a checked-in host config, or an
-issue. The bridge never includes the key in MCP output and redacts it from
+issue. Arbitype never includes the key in MCP output and redacts it from
 provider error details.
 
 ## Custom endpoints

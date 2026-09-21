@@ -1,3 +1,3 @@
-"""Legacy shim; the implementation lives in :mod:`typesafe_mcp.mcp`."""
+"""Legacy MCP shim; the implementation lives in :mod:`arbitype.mcp`."""
 
-from typesafe_mcp.mcp import *  # noqa: F401,F403
+from arbitype.mcp import *  # noqa: F401,F403

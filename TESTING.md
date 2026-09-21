@@ -1,6 +1,6 @@
 # Testing guide
 
-The project is tested as an MCP STDIO service, not only as a collection of
+Arbitype is tested as an MCP STDIO service, not only as a collection of
 Python functions.
 
 ## Local checks
@@ -8,7 +8,7 @@ Python functions.
 ```bash
 python3 -m unittest discover -s tests -v
 python3 -m compileall -q .
-python3 -m pip wheel --no-deps . --wheel-dir /tmp/typesafe-mcp-dist
+python3 -m pip wheel --no-deps . --wheel-dir /tmp/arbitype-dist
 make check
 ```
 
@@ -25,7 +25,7 @@ The live verification performed during development made 35 real requests to
 `jev-latest`, including a three-round, 19-call matrix covering every provider
 backed tool, structured values, batch questions, routing, review, and gate
 decisions. Successful responses returned `jev-1.13.0`, calibrated
-probabilities/confidence, and `usage`; the bridge accepted them after strict
+probabilities/confidence, and `usage`; Arbitype accepted them after strict
 contract validation. The boundary calls also confirmed that Noul needs
 meaningful instructions or criteria and Score levels cannot be `null`; those
 constraints are now rejected locally before a paid request. Live checks are
@@ -33,23 +33,23 @@ deliberately excluded from CI because they are paid and require a secret.
 
 ## Host check
 
-After registering the server, inspect it without making a provider request:
+After registering Arbitype, inspect it without making a provider request:
 
 ```bash
-typesafe-mcp doctor --json
+arbitype doctor --json
 ```
 
 For the Codex host specifically, the equivalent inspection commands are:
 
 ```bash
-codex mcp get typesafe
+codex mcp get arbitype
 codex mcp list
 ```
 
 The live command is opt-in because it makes a paid TypeSafe request:
 
 ```bash
-TYPESAFE_API_KEY=your-key typesafe-mcp doctor --live
+TYPESAFE_API_KEY=your-key arbitype doctor --live
 ```
 
 Do not put a real key in fixtures, command history, `config.toml`, or issue

@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       ref:
-        description: Git ref to publish (for example, main or v0.5.2)
+        description: Git ref to publish (for example, main or v0.6.0)
         required: true
         default: main
         type: string
@@ -21,8 +21,8 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  SERVER_NAME: io.github.Renwang-Huang/typesafe-mcp
-  PACKAGE_NAME: typesafe-mcp
+  SERVER_NAME: io.github.Renwang-Huang/arbitype
+  PACKAGE_NAME: arbitype
   MCP_PUBLISHER_VERSION: v1.8.1
   MCP_PUBLISHER_SHA256: a06c9096dcb9727c13555b6be26c7effa707b01f06a4c561ba7a3635443cf2cc
 
@@ -31,7 +31,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: mcp-registry-publish
-      url: https://registry.modelcontextprotocol.io/?q=io.github.Renwang-Huang%2Ftypesafe-mcp
+      url: https://registry.modelcontextprotocol.io/?q=io.github.Renwang-Huang%2Farbitype
 
     steps:
       - name: Validate requested ref
@@ -61,7 +61,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          package_version="$(python -c 'from typesafe_mcp._version import __version__; print(__version__)')"
+          package_version="$(python -c 'from arbitype._version import __version__; print(__version__)')"
 
           if [[ "$GITHUB_EVENT_NAME" == "push" ]]; then
             tag_version="${GITHUB_REF_NAME#v}"
@@ -81,7 +81,7 @@ jobs:
         run: |
           python -m compileall -q .
           python -m unittest discover -s tests -v
-          python -m pip wheel --no-deps . --wheel-dir /tmp/typesafe-mcp-release-dist
+          python -m pip wheel --no-deps . --wheel-dir /tmp/arbitype-release-dist
 
       - name: Wait for the PyPI artifact
         env:

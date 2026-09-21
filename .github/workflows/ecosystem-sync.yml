@@ -35,7 +35,14 @@ jobs:
 
       - name: Resolve package version
         id: version
-        run: echo "version=$(python -c 'from typesafe_mcp._version import __version__; print(__version__)')" >> "$GITHUB_OUTPUT"
+        run: echo "version=$(python -c 'from arbitype._version import __version__; print(__version__)')" >> "$GITHUB_OUTPUT"
 
       - name: Verify Registry and Glama listings
-        run: python scripts/check_ecosystem_sync.py --version "${{ steps.version.outputs.version }}"
+        env:
+          STRICT: ${{ github.event_name == 'workflow_run' && '1' || '0' }}
+        run: |
+          if [ "$STRICT" = "1" ]; then
+            python scripts/check_ecosystem_sync.py --version "${{ steps.version.outputs.version }}" --strict
+          else
+            python scripts/check_ecosystem_sync.py --version "${{ steps.version.outputs.version }}"
+          fi

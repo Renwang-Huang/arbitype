@@ -1,5 +1,32 @@
 # Changelog
 
+## 0.6.0 — 2026-09-22
+
+### Renamed to Arbitype
+
+The project formerly known as TypeSafe MCP is now Arbitype. Arbitype is
+positioned as a typed decision layer for AI agents rather than a
+TypeSafe-specific MCP bridge.
+
+Canonical identities:
+
+- GitHub: `Renwang-Huang/arbitype`
+- PyPI: `arbitype`
+- CLI: `arbitype`
+- Python: `arbitype`
+- MCP Registry: `io.github.Renwang-Huang/arbitype`
+
+Legacy names remain available as compatibility aliases where practical. The
+former `typesafe-mcp` PyPI project and Registry identity are not deleted or
+overwritten by this source migration.
+
+- Moved the implementation to the canonical `arbitype` package and retained
+  module-level identity shims for `typesafe_mcp` and `typesafe_codex_mcp`.
+- Added the `arbitype` CLI and PyPI metadata while retaining both legacy CLI
+  aliases.
+- Updated MCP Registry, README, CI, release, and ecosystem-check metadata to
+  the Arbitype identity.
+
 ## 0.5.3 — 2026-09-22
 
 - Bound STDIO frame reads to 16 MiB and discard oversized lines without

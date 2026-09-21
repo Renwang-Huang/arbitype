@@ -1,20 +1,20 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
-  "name": "io.github.Renwang-Huang/typesafe-mcp",
-  "title": "TypeSafe MCP",
-  "description": "Host-neutral MCP bridge for TypeSafe AI Jev judgments with typed review, routing, and gate tools.",
+  "name": "io.github.Renwang-Huang/arbitype",
+  "title": "Arbitype",
+  "description": "MCP-native typed decision tools for classification, scoring, verification, gating, review, and routing, powered by TypeSafe Jev.",
   "repository": {
-    "url": "https://github.com/Renwang-Huang/typesafe-mcp",
+    "url": "https://github.com/Renwang-Huang/arbitype",
     "source": "github",
     "id": "1379667659"
   },
-  "websiteUrl": "https://github.com/Renwang-Huang/typesafe-mcp",
-  "version": "0.5.3",
+  "websiteUrl": "https://github.com/Renwang-Huang/arbitype",
+  "version": "0.6.0",
   "packages": [
     {
       "registryType": "pypi",
-      "identifier": "typesafe-mcp",
-      "version": "0.5.3",
+      "identifier": "arbitype",
+      "version": "0.6.0",
       "runtimeHint": "uvx",
       "transport": {
         "type": "stdio"

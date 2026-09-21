@@ -12,12 +12,12 @@ from pathlib import Path
 # repository root so this check works both locally and in GitHub Actions.
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from typesafe_mcp._version import __version__  # noqa: E402
+from arbitype._version import __version__  # noqa: E402
 
 
-SERVER_NAME = "io.github.Renwang-Huang/typesafe-mcp"
-REPOSITORY_URL = "https://github.com/Renwang-Huang/typesafe-mcp"
-PACKAGE_NAME = "typesafe-mcp"
+SERVER_NAME = "io.github.Renwang-Huang/arbitype"
+REPOSITORY_URL = "https://github.com/Renwang-Huang/arbitype"
+PACKAGE_NAME = "arbitype"
 README_MARKER = f"<!-- mcp-name: {SERVER_NAME} -->"
 
 

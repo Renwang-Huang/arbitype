@@ -1,6 +1,6 @@
-"""Run the canonical :mod:`typesafe_mcp` CLI through the legacy entry point."""
+"""Run the canonical :mod:`arbitype` CLI through the legacy module path."""
 
-from typesafe_mcp.cli import main
+from arbitype.cli import main
 
 
 if __name__ == "__main__":

@@ -9,7 +9,7 @@ from urllib.error import HTTPError
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
-from typesafe_mcp import core, mcp  # noqa: E402
+from arbitype import core, mcp  # noqa: E402
 
 
 def noul_response(question_id="ready", value=0.9):
@@ -333,7 +333,7 @@ class ProtocolTests(unittest.TestCase):
 
 class CLITests(unittest.TestCase):
     def test_doctor_json_does_not_print_secret(self):
-        from typesafe_mcp.cli import main
+        from arbitype.cli import main
 
         with patch.dict(os.environ, {"TYPESAFE_API_KEY": "secret-key"}, clear=True), patch("sys.stdout", new_callable=io.StringIO) as stdout:
             self.assertEqual(main(["doctor", "--json"]), 0)

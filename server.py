@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""Backward-compatible launcher for the TypeSafe MCP bridge.
+"""Backward-compatible launcher for the Arbitype MCP service.
 
 Keep this file because existing MCP configurations point at it. New
-installations can use ``typesafe-mcp`` or ``python -m typesafe_mcp``.
+installations can use ``arbitype`` or ``python -m arbitype``.
 """
 
-from typesafe_mcp.cli import main
-from typesafe_mcp.core import (
+from arbitype.cli import main
+from arbitype.core import (
     APIError,
     BridgeError,
     ConfigError,
@@ -15,7 +15,7 @@ from typesafe_mcp.core import (
     post_to_typesafe as _post_to_typesafe,
     validate_request as _validate_request,
 )
-from typesafe_mcp.mcp import TOOLS, call_tool, handle_message, main_stdio
+from arbitype.mcp import TOOLS, call_tool, handle_message, main_stdio
 
 __all__ = [
     "APIError",

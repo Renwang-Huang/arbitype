@@ -18,7 +18,7 @@ jobs:
       - name: Install lint tool
         run: python -m pip install "ruff>=0.8,<1"
       - name: Lint
-        run: python -m ruff check typesafe_mcp typesafe_codex_mcp server.py smoke_test.py scripts tests
+        run: python -m ruff check arbitype typesafe_mcp typesafe_codex_mcp server.py smoke_test.py scripts tests
       - name: Validate publication metadata
         run: python scripts/validate_registry_metadata.py
 
@@ -57,11 +57,12 @@ jobs:
         run: python -m pip wheel --no-deps . --wheel-dir dist
       - name: Install wheel in a clean virtual environment
         run: |
-          python -m venv /tmp/typesafe-mcp-venv
-          /tmp/typesafe-mcp-venv/bin/python -m pip install --no-deps dist/*.whl
-          /tmp/typesafe-mcp-venv/bin/typesafe-mcp --version
-          /tmp/typesafe-mcp-venv/bin/typesafe-codex-mcp --version
-          printf '%s\n' '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18"}}' '{"jsonrpc":"2.0","id":2,"method":"shutdown","params":{}}' '{"jsonrpc":"2.0","method":"exit"}' | /tmp/typesafe-mcp-venv/bin/typesafe-mcp
+          python -m venv /tmp/arbitype-venv
+          /tmp/arbitype-venv/bin/python -m pip install --no-deps dist/*.whl
+          /tmp/arbitype-venv/bin/arbitype --version
+          /tmp/arbitype-venv/bin/typesafe-mcp --version
+          /tmp/arbitype-venv/bin/typesafe-codex-mcp --version
+          printf '%s\n' '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18"}}' '{"jsonrpc":"2.0","id":2,"method":"shutdown","params":{}}' '{"jsonrpc":"2.0","method":"exit"}' | /tmp/arbitype-venv/bin/arbitype
 
   official-sdk-interop:
     runs-on: ubuntu-latest

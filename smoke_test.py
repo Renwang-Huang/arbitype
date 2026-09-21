@@ -4,12 +4,12 @@
 import json
 import sys
 
-from server import _post_to_typesafe
+from arbitype.core import post_to_typesafe
 
 
 def main() -> int:
     try:
-        response = _post_to_typesafe(
+        response = post_to_typesafe(
             {
                 "model": "jev-latest",
                 "state": "A customer says the payment failed and asks for urgent help.",

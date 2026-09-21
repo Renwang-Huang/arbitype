@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       ref:
-        description: Git ref to package (for example, main or v0.5.1)
+        description: Git ref to package (for example, main or v0.6.0)
         required: true
         default: main
 
@@ -19,7 +19,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: pypi
-      url: https://pypi.org/p/typesafe-mcp
+      url: https://pypi.org/p/arbitype
     steps:
       - name: Check out package source
         uses: actions/checkout@v7
@@ -38,7 +38,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          package_version="$(python -c 'from typesafe_mcp._version import __version__; print(__version__)')"
+          package_version="$(python -c 'from arbitype._version import __version__; print(__version__)')"
           tag_version="${RELEASE_TAG#v}"
           if [[ "$RELEASE_TAG" != v* || "$tag_version" != "$package_version" ]]; then
             echo "Tag $RELEASE_TAG does not match package version $package_version" >&2
