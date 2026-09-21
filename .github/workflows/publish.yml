@@ -31,6 +31,25 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: Validate release version
+        if: github.event_name == 'release'
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          package_version="$(python -c 'from typesafe_mcp._version import __version__; print(__version__)')"
+          tag_version="${RELEASE_TAG#v}"
+          if [[ "$RELEASE_TAG" != v* || "$tag_version" != "$package_version" ]]; then
+            echo "Tag $RELEASE_TAG does not match package version $package_version" >&2
+            exit 1
+          fi
+
+      - name: Run release checks
+        run: |
+          python -m compileall -q .
+          python -m unittest discover -s tests -v
+
       - name: Build distribution
         run: |
           python -m pip install --upgrade build twine
