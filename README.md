@@ -14,6 +14,12 @@
 </p>
 
 <p>
+  <a href="https://registry.modelcontextprotocol.io/?q=io.github.Renwang-Huang%2Ftypesafe-mcp"><img src="https://img.shields.io/badge/Official%20MCP%20Registry-Listed-2ea44f" alt="Listed in the official MCP Registry"></a>
+  <a href="https://glama.ai/mcp/servers/Renwang-Huang/typesafe-mcp"><img src="https://img.shields.io/badge/Glama-Listed-6f42c1" alt="Listed on Glama"></a>
+</p>
+
+<p>
+  <a href="#discovery">Discovery</a> ·
   <a href="#quick-start">Quick start</a> ·
   <a href="#host-setup">Host setup</a> ·
   <a href="#tools">Tools</a> ·
@@ -31,6 +37,10 @@ and returns typed results to MCP-capable hosts.
 > [!NOTE]
 > TypeSafe MCP is an independent community project. It is not an official
 > TypeSafe AI product or an official integration for any particular agent host.
+
+## Discovery
+
+Find the published server in the [official MCP Registry](https://registry.modelcontextprotocol.io/?q=io.github.Renwang-Huang%2Ftypesafe-mcp) or the [Glama directory](https://glama.ai/mcp/servers/Renwang-Huang/typesafe-mcp). For local installation, use the [PyPI package](https://pypi.org/project/typesafe-mcp/) with `uvx typesafe-mcp`.
 
 <!-- mcp-name: io.github.Renwang-Huang/typesafe-mcp -->
 
