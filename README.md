@@ -1,43 +1,78 @@
-# TypeSafe MCP
+<div align="center">
 
-![CI](https://github.com/Renwang-Huang/typesafe-mcp/actions/workflows/ci.yml/badge.svg)
+<h1>TypeSafe MCP</h1>
 
-Dependency-free, host-neutral STDIO MCP service for [TypeSafe AI](https://typesafe.ai)'s
-Jev System One API.
+<p><strong>A host-neutral, dependency-free MCP bridge for TypeSafe AI's Jev judgments.</strong></p>
 
-It keeps the API key in the process environment, validates requests and
-responses, retries temporary provider failures safely, and exposes typed tools
-for agent routing, review signals, and bounded judgments.
+<p>
+  <a href="https://github.com/Renwang-Huang/typesafe-mcp/actions/workflows/ci.yml"><img src="https://github.com/Renwang-Huang/typesafe-mcp/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="https://github.com/Renwang-Huang/typesafe-mcp/releases"><img src="https://img.shields.io/github/v/release/Renwang-Huang/typesafe-mcp?display_name=tag&sort=semver" alt="Latest release"></a>
+  <a href="https://github.com/Renwang-Huang/typesafe-mcp/blob/main/LICENSE"><img src="https://img.shields.io/github/license/Renwang-Huang/typesafe-mcp" alt="MIT license"></a>
+  <img src="https://img.shields.io/badge/python-3.10%2B-3776AB?logo=python&logoColor=white" alt="Python 3.10 or newer">
+  <a href="https://github.com/modelcontextprotocol/modelcontextprotocol/tree/main/docs/specification/2026-07-28"><img src="https://img.shields.io/badge/MCP-2026--07--28-6F42C1" alt="MCP 2026-07-28"></a>
+</p>
 
+<p>
+  <a href="#quick-start">Quick start</a> ·
+  <a href="#host-setup">Host setup</a> ·
+  <a href="#tools">Tools</a> ·
+  <a href="#configuration">Configuration</a> ·
+  <a href="BENCHMARK.md">Engineering benchmark</a>
+</p>
+
+</div>
+
+TypeSafe MCP adapts the [TypeSafe AI](https://typesafe.ai) Jev System One API
+to standard MCP STDIO. It keeps credentials in the process environment,
+validates requests and responses, retries temporary provider failures safely,
+and returns typed results to MCP-capable hosts.
+
+> [!NOTE]
 > TypeSafe MCP is an independent community project. It is not an official
 > TypeSafe AI product or an official integration for any particular agent host.
 
-## Why this bridge
+## At a glance
 
-TypeSafe's official interface is an HTTP API. This project provides a local
-STDIO MCP adapter that any compatible agent host can start, without third-party
-runtime dependencies beyond Python 3.10+ itself.
+| | |
+| --- | --- |
+| **Runtime** | Python 3.10+ · standard library at runtime · no third-party runtime dependencies |
+| **Transport** | Newline-delimited MCP STDIO |
+| **Protocol** | MCP `2026-07-28` metadata path plus legacy `initialize` revisions |
+| **Provider** | TypeSafe AI Jev System One over HTTPS |
+| **Surface** | 9 read-only, idempotent tools with structured output schemas |
+| **Security posture** | Environment-only credential · bounded payloads · redacted diagnostics |
 
-- No third-party runtime dependencies.
-- `evaluate` stays close to the official API: `noul`, `choice`, and `score`.
-- `classify`, `score`, and `check` remove repetitive question-map boilerplate.
-- `verify` batches claim checks into one request.
-- `gate` converts bounded check probabilities into `pass`, `review`, or `fail`.
-- `route` selects the next action from a closed set without executing it.
-- `review` evaluates a diff, plan, or test report against explicit checks.
-- `health` diagnoses local configuration without a network request by default.
-- API responses are checked for missing answers, invalid probabilities, unknown
-  choices, malformed scores, and inconsistent distributions.
-- 408, 429, 500, 502, 503, 504, and 529 receive bounded exponential backoff;
-  `Retry-After` is honored.
-- Provider error details are bounded and credentials are redacted.
-- Request and response size limits protect the MCP process from accidental
-  context explosions.
+## How it fits
 
-Probabilities and confidence are model signals, not proof. `verify` and
-`gate` are deliberately not security boundaries or authorization systems.
+```mermaid
+flowchart LR
+    host["MCP host<br/>Codex · Claude · Cursor · VS Code"]
+    bridge["TypeSafe MCP<br/>typed tools + validation"]
+    api["TypeSafe AI API<br/>Jev System One"]
+    env["TYPESAFE_API_KEY<br/>process environment"]
 
-## Install
+    host -->|MCP STDIO| bridge
+    bridge -->|validated HTTPS| api
+    api -->|typed judgment| bridge
+    bridge -->|structured result| host
+    env -. never in arguments/output .-> bridge
+```
+
+## What you get
+
+| Capability | Result |
+| --- | --- |
+| **Typed judgments** | `evaluate` stays close to the raw `noul`, `choice`, and `score` API. |
+| **Convenience tools** | `classify`, `score`, `check`, and `verify` remove repetitive question-map boilerplate. |
+| **Bounded decisions** | `gate` and `review` return `pass`, `review`, or `fail` signals without authorizing actions. |
+| **Agent routing** | `route` selects one next action from a closed set; it never executes it. |
+| **Operational safety** | Strict response validation, bounded retries, `Retry-After`, size limits, and credential redaction. |
+| **Host portability** | One STDIO process works with Codex, Claude, Cursor, VS Code, and other MCP hosts. |
+
+Probabilities and confidence are model signals, not proof. `verify` and `gate`
+are deliberately not security boundaries or authorization systems.
+
+## Quick start
 
 ### Run from a checkout
 
@@ -66,14 +101,19 @@ uvx --from 'git+https://github.com/Renwang-Huang/typesafe-mcp@v0.5.1' \
 
 ### Package layout and compatibility
 
-`typesafe_mcp/` is the only implementation package and is the correct import
-path for new code. The similarly named `typesafe_codex_mcp/` directory is a
-legacy, zero-logic shim that re-exports the canonical package for applications
-that have not migrated yet; it is not a second MCP server and must not receive
-new implementation code. The old `typesafe-codex-mcp` command and the
-`codex_route`/`codex_review` tool names are retained only as migration aliases.
+| Entry | Status | Use |
+| --- | --- | --- |
+| `typesafe_mcp` | **Canonical** | Import this package and add new implementation code here. |
+| `typesafe_codex_mcp` | Legacy shim | Re-exports the canonical package for existing imports; it is not a second server. |
+| `typesafe-mcp` | **Primary CLI** | Use for new installations. |
+| `typesafe-codex-mcp` | Migration alias | Retained for existing host configurations. |
+| `route`, `review` | **Current tools** | Use these names in new MCP configurations. |
+| `codex_route`, `codex_review` | Legacy tool aliases | Accepted for callers that have not migrated. |
 
-## MCP host configuration
+The legacy package and aliases contain no independent business logic and must
+not receive new implementation code.
+
+## Host setup
 
 The service uses the standard MCP STDIO transport. Every host has its own
 configuration syntax, but the process and environment contract are the same.
@@ -87,7 +127,10 @@ env_vars = ["TYPESAFE_API_KEY"]
 startup_timeout_sec = 10
 tool_timeout_sec = 60
 default_tools_approval_mode = "prompt"
-enabled_tools = ["route", "review", "classify", "score", "check", "verify", "gate", "evaluate", "health"]
+enabled_tools = [
+  "route", "review", "classify", "score", "check", "verify", "gate",
+  "evaluate", "health"
+]
 ```
 
 For an installed command:
@@ -200,13 +243,15 @@ See [SECURITY.md](SECURITY.md) before using live credentials and
 [BENCHMARK.md](BENCHMARK.md) for the comparison against the community
 implementations reviewed during development.
 
-## Limitations
+## Boundaries
+
+| Supported in v0.5.1 | Deliberately not provided |
+| --- | --- |
+| MCP STDIO, modern `2026-07-28` metadata, and earlier `initialize` revisions | Streamable HTTP, SSE, or OAuth |
+| Tools with typed inputs, structured outputs, and read-only annotations | Resources, prompts, subscriptions, or elicitation |
+| Bounded TypeSafe judgments and deterministic local gate transformations | File edits, shell commands, authorization, or security approval |
 
 Jev is designed for bounded judgments. Use ordinary code for exact math, date
 arithmetic, and authorization; use a generative model for prose or code
 generation. The bridge sends `state` to TypeSafe, so do not pass secrets or
 personal data without checking your data-handling requirements.
-
-The current transport is newline-delimited MCP STDIO. The server supports the
-modern `2026-07-28` metadata path and earlier `initialize` revisions, but it
-does not yet expose Streamable HTTP, SSE, OAuth, resources, or prompts.
