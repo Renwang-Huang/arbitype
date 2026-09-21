@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.5.2 — 2026-09-21
+
+- Published the `typesafe-mcp` distribution to PyPI for direct `uvx` installs.
+- Added official MCP Registry metadata and PyPI ownership verification.
+
 ## 0.5.1 — 2026-09-21
 
 - Made the canonical-versus-legacy package layout explicit in the README and

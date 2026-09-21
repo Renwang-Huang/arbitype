@@ -32,6 +32,8 @@ and returns typed results to MCP-capable hosts.
 > TypeSafe MCP is an independent community project. It is not an official
 > TypeSafe AI product or an official integration for any particular agent host.
 
+<!-- mcp-name: io.github.Renwang-Huang/typesafe-mcp -->
+
 ## At a glance
 
 | | |
@@ -102,13 +104,13 @@ uvx typesafe-mcp
 To pin the published version:
 
 ```bash
-uvx --from 'typesafe-mcp==0.5.1' typesafe-mcp
+uvx --from 'typesafe-mcp==0.5.2' typesafe-mcp
 ```
 
 For an unreleased source checkout, `uvx` can also run a pinned Git tag:
 
 ```bash
-uvx --from 'git+https://github.com/Renwang-Huang/typesafe-mcp@v0.5.1' \
+uvx --from 'git+https://github.com/Renwang-Huang/typesafe-mcp@v0.5.2' \
   typesafe-mcp
 ```
 
@@ -258,7 +260,7 @@ implementations reviewed during development.
 
 ## Boundaries
 
-| Supported in v0.5.1 | Deliberately not provided |
+| Supported in v0.5.2 | Deliberately not provided |
 | --- | --- |
 | MCP STDIO, modern `2026-07-28` metadata, and earlier `initialize` revisions | Streamable HTTP, SSE, or OAuth |
 | Tools with typed inputs, structured outputs, and read-only annotations | Resources, prompts, subscriptions, or elicitation |

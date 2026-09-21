@@ -1,0 +1,33 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.Renwang-Huang/typesafe-mcp",
+  "title": "TypeSafe MCP",
+  "description": "Host-neutral MCP bridge for TypeSafe AI Jev judgments with typed review, routing, and gate tools.",
+  "repository": {
+    "url": "https://github.com/Renwang-Huang/typesafe-mcp",
+    "source": "github",
+    "id": "1379667659"
+  },
+  "websiteUrl": "https://github.com/Renwang-Huang/typesafe-mcp",
+  "version": "0.5.2",
+  "packages": [
+    {
+      "registryType": "pypi",
+      "identifier": "typesafe-mcp",
+      "version": "0.5.2",
+      "runtimeHint": "uvx",
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables": [
+        {
+          "name": "TYPESAFE_API_KEY",
+          "description": "API key for TypeSafe AI Jev System One.",
+          "isRequired": true,
+          "format": "string",
+          "isSecret": true
+        }
+      ]
+    }
+  ]
+}
