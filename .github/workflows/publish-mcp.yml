@@ -1,9 +1,10 @@
 name: Publish to MCP Registry
 
 on:
-  push:
-    tags:
-      - "v*"
+  workflow_run:
+    workflows:
+      - Publish to PyPI
+    types: [completed]
   workflow_dispatch:
     inputs:
       ref:
@@ -17,7 +18,7 @@ permissions:
   id-token: write
 
 concurrency:
-  group: mcp-registry-${{ github.ref }}
+  group: mcp-registry-${{ github.event.workflow_run.id || github.ref }}
   cancel-in-progress: false
 
 env:
@@ -28,6 +29,7 @@ env:
 
 jobs:
   publish:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     environment:
       name: mcp-registry-publish
@@ -49,7 +51,7 @@ jobs:
       - name: Check out source
         uses: actions/checkout@v7
         with:
-          ref: ${{ inputs.ref || github.ref }}
+          ref: ${{ inputs.ref || github.event.workflow_run.head_sha || github.sha }}
 
       - name: Set up Python
         uses: actions/setup-python@v7
@@ -63,16 +65,7 @@ jobs:
           set -euo pipefail
           package_version="$(python -c 'from arbitype._version import __version__; print(__version__)')"
 
-          if [[ "$GITHUB_EVENT_NAME" == "push" ]]; then
-            tag_version="${GITHUB_REF_NAME#v}"
-            if [[ "$GITHUB_REF_NAME" != v* || "$tag_version" != "$package_version" ]]; then
-              echo "Tag $GITHUB_REF_NAME does not match package version $package_version" >&2
-              exit 1
-            fi
-            version="$tag_version"
-          else
-            version="$package_version"
-          fi
+          version="$package_version"
 
           echo "version=$version" >> "$GITHUB_OUTPUT"
           echo "Publishing version: $version"

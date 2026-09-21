@@ -26,6 +26,10 @@ overwritten by this source migration.
   aliases.
 - Updated MCP Registry, README, CI, release, and ecosystem-check metadata to
   the Arbitype identity.
+- Verified that a same-name metadata-only `typesafe-mcp` migration wheel can
+  leave legacy console scripts stale during pip upgrades; the release keeps
+  the old PyPI project untouched and documents the safe uninstall-then-install
+  migration instead.
 
 ## 0.5.3 — 2026-09-22
 

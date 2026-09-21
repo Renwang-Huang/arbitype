@@ -408,7 +408,17 @@ class StdioIntegrationTests(unittest.TestCase):
         self.assertEqual(completed.returncode, 0, completed.stderr.decode())
         self.assertEqual(completed.stderr, b"")
         responses = [json.loads(line) for line in completed.stdout.splitlines()]
-        self.assertEqual([response["error"]["code"] for response in responses], [-32700])
+        # CPython versions differ on whether this depth is rejected by the
+        # JSON decoder or accepted as a valid non-object JSON value. Both
+        # paths must remain bounded and produce a JSON-RPC error, not a
+        # traceback or process termination.
+        try:
+            json.loads(nested.decode("utf-8"))
+        except (RecursionError, ValueError):
+            expected_code = -32700
+        else:
+            expected_code = -32600
+        self.assertEqual([response["error"]["code"] for response in responses], [expected_code])
 
     def test_stdio_reads_and_discards_oversized_lines_with_bounded_calls(self):
         class RecordingReader:

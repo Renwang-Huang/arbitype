@@ -18,12 +18,26 @@ silently breaking existing host configurations.
 
 ## Maintainer procedure
 
+Create a GitHub release and tag matching `arbitype._version.__version__` to
+start the release workflows. The Registry workflow is gated on successful
+completion of the canonical PyPI workflow. The effective publication order is:
+
 1. Publish `arbitype` to PyPI.
-2. Create a release tag matching `arbitype._version.__version__`.
-3. Let `Publish to MCP Registry` publish `server.json` under the new identity.
-4. Verify the new entry at the official Registry and allow Glama to crawl the
-   renamed repository.
-5. If the current `mcp-publisher` release documents a supported deprecation
+2. Verify `arbitype==<version>` on PyPI and confirm that `uvx arbitype` can
+   resolve the artifact.
+3. Publish `server.json` under the new identity through `Publish to MCP Registry`.
+4. Verify the new entry at the official Registry.
+5. Do not publish a `typesafe-mcp==<version>` migration wheel. A real upgrade
+   test from the public `typesafe-mcp==0.5.2` package showed that pip can
+   remove the legacy console-script files while replacing the old distribution.
+   Use the safe explicit migration instead:
+
+   ```bash
+   python -m pip uninstall typesafe-mcp
+   python -m pip install arbitype
+   ```
+
+6. If the current `mcp-publisher` release documents a supported deprecation
    operation, manually mark the legacy entry with:
 
    ```text
@@ -32,12 +46,16 @@ silently breaking existing host configurations.
    ```
 
    Do not run an undocumented delete, overwrite, or identity-mutation command.
-   If deprecation is not supported, leave the legacy entry intact and keep the
-   migration notice in the README and release notes.
+   Do this only after both the new PyPI artifact and new Registry identity are
+   live. If deprecation is not supported, leave the legacy entry intact and
+   keep the migration notice in the README and release notes.
+7. Verify Glama after its crawl or submit its supported listing request.
 
-The repository workflow deliberately automates only the safe new-identity
-publication path.
+The repository workflows deliberately enforce the safe part of this order:
+the canonical PyPI release precedes Registry publication. The old PyPI project
+is left untouched; Glama controls its own crawl schedule and is verified
+separately.
 
-For Python environments, uninstall the old `typesafe-mcp` distribution before
-installing `arbitype`; both distributions contain the legacy module paths and
-should not be installed side by side.
+Do not use `python -m pip install -U typesafe-mcp` as the migration path for
+this release. It would select the historical project and does not provide the
+canonical `arbitype` distribution.

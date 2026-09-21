@@ -11,15 +11,15 @@
 <p>
   <a href="https://github.com/Renwang-Huang/arbitype/actions/workflows/ci.yml"><img src="https://github.com/Renwang-Huang/arbitype/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="https://github.com/Renwang-Huang/arbitype/releases"><img src="https://img.shields.io/github/v/release/Renwang-Huang/arbitype?display_name=tag&sort=semver" alt="Latest release"></a>
-  <a href="https://pypi.org/project/arbitype/"><img src="https://img.shields.io/pypi/v/arbitype" alt="PyPI version"></a>
+  <a href="https://pypi.org/project/arbitype/"><img src="https://img.shields.io/badge/PyPI-0.6.0%20pending-lightgrey" alt="Arbitype PyPI publication pending"></a>
   <a href="https://github.com/Renwang-Huang/arbitype/blob/main/LICENSE"><img src="https://img.shields.io/github/license/Renwang-Huang/arbitype" alt="MIT license"></a>
   <img src="https://img.shields.io/badge/python-3.10%2B-3776AB?logo=python&logoColor=white" alt="Python 3.10 or newer">
   <a href="https://github.com/modelcontextprotocol/modelcontextprotocol/tree/main/docs/specification/2026-07-28"><img src="https://img.shields.io/badge/MCP-2026--07--28-6F42C1" alt="MCP 2026-07-28"></a>
 </p>
 
 <p>
-  <a href="https://registry.modelcontextprotocol.io/?q=io.github.Renwang-Huang%2Farbitype"><img src="https://img.shields.io/badge/Official%20MCP%20Registry-Arbitype-2ea44f" alt="Arbitype in the official MCP Registry"></a>
-  <a href="https://glama.ai/mcp/servers/Renwang-Huang/arbitype"><img src="https://img.shields.io/badge/Glama-Arbitype-6f42c1" alt="Arbitype on Glama"></a>
+  <a href="https://registry.modelcontextprotocol.io/?q=io.github.Renwang-Huang%2Farbitype"><img src="https://img.shields.io/badge/MCP%20Registry-0.6.0%20pending-lightgrey" alt="Arbitype MCP Registry publication pending"></a>
+  <a href="https://glama.ai/mcp/servers/Renwang-Huang/arbitype"><img src="https://img.shields.io/badge/Glama-crawl%20pending-lightgrey" alt="Arbitype Glama crawl pending"></a>
 </p>
 
 <p>
@@ -195,28 +195,52 @@ result = client.evaluate({
 })
 ```
 
-### Compatibility names
+### Package and import compatibility
 
-The former public surfaces remain available as migration aliases and contain
-no independent business logic:
+The canonical wheel contains the one implementation plus the legacy import
+shims. The old PyPI project is not deleted, yanked, or released under a new
+identity.
 
-| Surface | Status |
+| Surface | Name | Status |
+| --- | --- | --- |
+| PyPI | `arbitype` | Canonical distribution |
+| Python | `arbitype` | Canonical import |
+| Python | `typesafe_mcp` | Legacy compatibility shim |
+| Python | `typesafe_codex_mcp` | Legacy compatibility shim |
+
+### CLI compatibility
+
+| Command | Status |
 | --- | --- |
-| `arbitype` | **Canonical package and CLI** |
-| `typesafe_mcp` | Legacy Python compatibility shim |
-| `typesafe_codex_mcp` | Legacy Python compatibility shim |
-| `arbitype` | **Primary CLI** |
+| `arbitype` | Canonical CLI |
 | `typesafe-mcp` | Legacy CLI alias |
 | `typesafe-codex-mcp` | Legacy CLI alias |
-| `route`, `review` | Current tool names |
-| `codex_route`, `codex_review` | Legacy tool aliases |
 
-The old `typesafe-mcp` PyPI project is not deleted or yanked. New
-installations should use `arbitype`; existing installations can migrate when
-convenient. Do not install both distributions into the same environment: the
-Arbitype wheel provides the legacy module paths itself. Upgrade with
-`python -m pip uninstall typesafe-mcp` followed by `python -m pip install arbitype`
-when moving an environment to the new package.
+### Tool compatibility
+
+| Tool | Status |
+| --- | --- |
+| `route` | Canonical |
+| `review` | Canonical |
+| `codex_route` | Legacy alias |
+| `codex_review` | Legacy alias |
+
+The historical `typesafe-mcp` PyPI project remains intact. A metadata-only
+replacement with the same distribution name was tested and rejected because
+pip can remove legacy console-script files while replacing the old
+distribution. Therefore no `typesafe-mcp==0.6.0` migration package will be
+published.
+
+Existing users should use this explicit, safe migration:
+
+```bash
+python -m pip uninstall typesafe-mcp
+python -m pip install arbitype
+```
+
+New installations should use `arbitype` directly. This leaves one
+distribution owning the canonical implementation, compatibility shims, and
+all three CLI entry points.
 
 ## Discovery and Registry
 
@@ -231,6 +255,11 @@ The intended package entry is:
 ```text
 uvx arbitype
 ```
+
+The PyPI, MCP Registry, and Glama links are prepared before publication, but
+their badges remain explicitly marked pending until the external listings are
+verified. Release ordering and the legacy Registry migration procedure are
+documented in [docs/REGISTRY_MIGRATION.md](docs/REGISTRY_MIGRATION.md).
 
 The former identity `io.github.Renwang-Huang/typesafe-mcp` is a legacy
 identity. It must remain available for existing users and should be marked

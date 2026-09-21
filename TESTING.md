@@ -10,6 +10,7 @@ python3 -m unittest discover -s tests -v
 python3 -m compileall -q .
 python3 -m pip wheel --no-deps . --wheel-dir /tmp/arbitype-dist
 make check
+make release-check
 ```
 
 The CI lint gate runs Ruff with the portable syntax/import rules used by the
@@ -20,6 +21,12 @@ covers request and response validation, credential redaction, retry behavior,
 configuration errors, MCP schemas and annotations, modern metadata and JSON-RPC
 boundaries, bounded STDIO framing and invalid UTF-8, shutdown, tool failures,
 and clean wheel contents.
+
+The old PyPI package migration was tested against the public
+`typesafe-mcp==0.5.2` wheel. A same-name metadata-only replacement was not
+released because pip can remove the legacy console scripts while replacing
+the old distribution. Test existing environments with the documented
+uninstall-then-install path instead.
 
 The live verification performed during development made 35 real requests to
 `jev-latest`, including a three-round, 19-call matrix covering every provider
