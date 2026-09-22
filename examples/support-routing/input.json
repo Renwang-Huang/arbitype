@@ -1,0 +1,13 @@
+{
+  "state": {
+    "ticket_id": "SUP-1042",
+    "customer_message": "I was charged twice and the second charge is still pending.",
+    "previous_actions": ["requested transaction timestamp"]
+  },
+  "instructions": "Choose the next support action that best reduces uncertainty or resolves the issue.",
+  "actions": {
+    "ask_for_receipt": "Request the receipt or transaction reference.",
+    "escalate_billing": "Send the ticket to the billing queue.",
+    "close_ticket": "Close the ticket without further action."
+  }
+}

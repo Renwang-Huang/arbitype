@@ -97,11 +97,12 @@ QUESTION_SCHEMA: dict[str, Any] = {
 }
 
 SERVER_INSTRUCTIONS = (
-    "Arbitype provides read-only typed decision tools for AI agents, powered by TypeSafe Jev. "
-    "Use classify/score/check/verify for signals, route for one next action, and review/gate "
-    "for bounded decisions. Tools never edit files, run commands, approve changes, or replace "
-    "tests/review. Probabilities are model signals, not proof, authorization, or security. "
-    "Keep secrets out of state; use evaluate for raw noul/choice/score questions."
+    "Arbitype provides read-only typed decision tools powered by TypeSafe Jev. "
+    "Tool selection: classify=one closed label; score=ordered rubric; check=one proposition; "
+    "verify=multiple claims; gate=thresholded checks; review=whole-object quality/risk; "
+    "route=one next action; evaluate=raw questions; health=local configuration. "
+    "USE these for bounded signals. DO NOT treat probabilities as proof, authorization, or security. "
+    "Tools never edit files, run commands, approve changes, or replace tests/review."
 )
 
 # The current MCP specification (2026-07-28) introduced a per-request metadata
@@ -253,8 +254,9 @@ def _tool(
 TOOLS = [
     _tool(
         "evaluate",
-        "Evaluate state with TypeSafe Jev and return the raw typed answers. Use for bounded "
-        "noul, choice, or score questions; never for prose, code generation, arithmetic, or dates.",
+        "USE WHEN you need raw typed Jev answers for one or more bounded noul, choice, or score "
+        "questions. DO NOT USE WHEN you need prose, code generation, arithmetic, dates, or a "
+        "specialized primitive such as route or gate.",
         {
             "state": {**STRUCTURED_VALUE_SCHEMA, "description": "Text or structured evidence."},
             "questions": {
@@ -271,7 +273,9 @@ TOOLS = [
     ),
     _tool(
         "classify",
-        "Choose one label from a closed set and return its probability distribution.",
+        "USE WHEN you need exactly one label from a closed, unordered set and its probability "
+        "distribution. DO NOT USE WHEN labels are ordered levels (use score), options are next "
+        "actions (use route), or inputs are claims (use verify).",
         {
             "state": STRUCTURED_VALUE_SCHEMA,
             "instructions": ENTRY_SCHEMA,
@@ -288,7 +292,9 @@ TOOLS = [
     ),
     _tool(
         "score",
-        "Rate state on an ordered rubric and return the weighted score, probabilities, and confidence.",
+        "USE WHEN you need a weighted rating over two or more ordered rubric levels. DO NOT USE "
+        "WHEN choices are unordered categories (use classify), next actions (use route), or "
+        "thresholded checks (use gate).",
         {
             "state": STRUCTURED_VALUE_SCHEMA,
             "instructions": ENTRY_SCHEMA,
@@ -305,7 +311,9 @@ TOOLS = [
     ),
     _tool(
         "check",
-        "Estimate the probability that a bounded yes/no proposition is true.",
+        "USE WHEN you need one bounded yes/no proposition and its probability. DO NOT USE WHEN "
+        "you need to verify multiple named claims (use verify), combine checks with thresholds "
+        "(use gate), or assess an entire object or review package (use review).",
         {
             "state": STRUCTURED_VALUE_SCHEMA,
             "instructions": ENTRY_SCHEMA,
@@ -318,8 +326,9 @@ TOOLS = [
     ),
     _tool(
         "verify",
-        "Check several claims against the supplied evidence in one request. Results are review "
-        "signals, not proof of truth.",
+        "USE WHEN you need to check multiple named claims against supplied evidence in one request. "
+        "DO NOT USE WHEN you need one proposition (use check), an overall quality/risk review "
+        "(use review), or a pass/review/fail threshold (use gate). Results are signals, not proof.",
         {
             "state": STRUCTURED_VALUE_SCHEMA,
             "claims": {
@@ -337,8 +346,9 @@ TOOLS = [
     ),
     _tool(
         "gate",
-        "Evaluate bounded pass checks and turn their probabilities into pass/review/fail. "
-        "This is not an authorization or security boundary; keep normal human and policy controls.",
+        "USE WHEN you need to combine multiple bounded checks and thresholds into pass/review/fail. "
+        "DO NOT USE WHEN you need claim-by-claim evidence checking (use verify) or whole-object "
+        "quality/risk assessment (use review). This is not authorization or a security boundary.",
         {
             "state": STRUCTURED_VALUE_SCHEMA,
             "checks": {
@@ -356,7 +366,9 @@ TOOLS = [
     ),
     _tool(
         "route",
-        "Choose the next action from a closed set. This suggests an action; it does not execute it.",
+        "USE WHEN you need exactly one next action from a closed set of actions. DO NOT USE WHEN "
+        "you need a topic/category label (use classify), an ordered rating (use score), or action "
+        "execution. This suggests an action; it never executes it.",
         {
             "state": STRUCTURED_VALUE_SCHEMA,
             "instructions": ENTRY_SCHEMA,
@@ -373,7 +385,10 @@ TOOLS = [
     ),
     _tool(
         "review",
-        "Evaluate a diff, plan, or test report against checks and return pass/review/fail signals. It never edits files.",
+        "USE WHEN you need an overall quality or risk review of a whole-object artifact such as a diff, plan, release, or test "
+        "report against multiple checks. DO NOT USE WHEN you need claim-by-claim verification "
+        "(use verify), a single proposition (use check), or next-action selection (use route). "
+        "It returns signals and never edits files.",
         {
             "state": STRUCTURED_VALUE_SCHEMA,
             "checks": {
@@ -391,7 +406,9 @@ TOOLS = [
     ),
     _tool(
         "health",
-        "Inspect local MCP configuration without making a network request. Set live=true only for an explicit paid provider check.",
+        "USE WHEN you need local Arbitype configuration or an explicitly requested live provider "
+        "check. DO NOT USE WHEN you need a business decision; health does not evaluate state and "
+        "does not make a network request unless live=true is explicit.",
         {
             "live": {"type": "boolean", "default": False},
         },

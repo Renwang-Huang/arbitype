@@ -1,0 +1,12 @@
+{
+  "state": {
+    "title": "Bound retries for provider timeouts",
+    "diff_summary": "Adds a maximum retry count and preserves the existing HTTPS client.",
+    "tests": ["test_network_failures_retry_until_success", "test_retry_after_http_date_is_parsed"]
+  },
+  "claims": {
+    "bounded_retries": "The change limits the number of provider retries.",
+    "timeout_coverage": "The PR tests timeout or retry behavior.",
+    "transport_unchanged": "The PR does not introduce a new network transport."
+  }
+}

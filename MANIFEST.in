@@ -3,7 +3,13 @@ include server.json
 include scripts/official_sdk_smoke.py
 include scripts/release_readiness.py
 include scripts/validate_registry_metadata.py
+include scripts/run_tool_selection_eval.py
+include scripts/run_stability_benchmark.py
+include scripts/validate_eval_datasets.py
 include docs/REGISTRY_MIGRATION.md
+include docs/OBSERVABILITY.md
+recursive-include evals *.jsonl *.md
+recursive-include examples *.json *.md
 recursive-include arbitype *.py
 recursive-include typesafe_mcp *.py
 recursive-include typesafe_codex_mcp *.py

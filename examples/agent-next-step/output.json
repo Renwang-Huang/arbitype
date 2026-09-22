@@ -1,0 +1,32 @@
+{
+  "type": "route",
+  "route": "query_registry",
+  "answer": {
+    "type": "choice",
+    "choice": "query_registry",
+    "probabilities": {
+      "query_registry": 0.93,
+      "republish": 0.03,
+      "close_task": 0.04
+    },
+    "confidence": 0.93
+  },
+  "model": "jev-1.13.0",
+  "usage": {"input_tokens": 106, "output_tokens": 12},
+  "evaluation": {
+    "model": "jev-1.13.0",
+    "answers": {
+      "next_action": {
+        "type": "choice",
+        "choice": "query_registry",
+        "probabilities": {
+          "query_registry": 0.93,
+          "republish": 0.03,
+          "close_task": 0.04
+        },
+        "confidence": 0.93
+      }
+    },
+    "usage": {"input_tokens": 106, "output_tokens": 12}
+  }
+}

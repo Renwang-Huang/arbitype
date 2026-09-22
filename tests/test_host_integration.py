@@ -49,6 +49,16 @@ class HostContractTests(unittest.TestCase):
             self.assertIn("required", tool["outputSchema"])
             self.assertEqual(tool["inputSchema"]["additionalProperties"], False)
 
+    def test_tool_descriptions_explain_selection_boundaries(self):
+        descriptions = {tool["name"]: tool["description"] for tool in mcp.TOOLS}
+        for name, description in descriptions.items():
+            self.assertIn("USE WHEN", description, name)
+            self.assertIn("DO NOT USE WHEN", description, name)
+        self.assertIn("multiple named claims", descriptions["verify"])
+        self.assertIn("threshold", descriptions["gate"])
+        self.assertIn("next action", descriptions["route"])
+        self.assertIn("whole-object", descriptions["review"])
+
     def test_canonical_and_legacy_packages_share_exports(self):
         import typesafe_mcp
         import typesafe_codex_mcp

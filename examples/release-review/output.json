@@ -1,0 +1,19 @@
+{
+  "type": "review",
+  "decision": "review",
+  "policy": {"pass_at": 0.85, "review_at": 0.6},
+  "checks": {
+    "tests": {"decision": "pass", "probability": 0.98},
+    "artifact": {"decision": "pass", "probability": 0.94},
+    "security_review": {"decision": "review", "probability": 0.67}
+  },
+  "evaluation": {
+    "model": "jev-1.13.0",
+    "answers": {
+      "tests": {"type": "noul", "noul": 0.98},
+      "artifact": {"type": "noul", "noul": 0.94},
+      "security_review": {"type": "noul", "noul": 0.67}
+    },
+    "usage": {"input_tokens": 142, "output_tokens": 22}
+  }
+}

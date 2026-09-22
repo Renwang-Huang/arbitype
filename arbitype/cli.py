@@ -90,6 +90,17 @@ def _evaluate_cli(args: argparse.Namespace) -> int:
     return 0
 
 
+def _setup_cli(args: argparse.Namespace) -> int:
+    from .host_setup import run_setup
+
+    return run_setup(
+        args.host,
+        detect=args.detect,
+        dry_run=args.dry_run,
+        remove=args.remove,
+    )
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="arbitype",
@@ -108,6 +119,36 @@ def build_parser() -> argparse.ArgumentParser:
         default="-",
         help="JSON file to read; use - for stdin (default)",
     )
+
+    setup = subparsers.add_parser(
+        "setup",
+        help="safely configure Arbitype in an MCP host",
+        description=(
+            "Add or remove an Arbitype STDIO entry without writing API keys. "
+            "Existing unknown configuration is never overwritten."
+        ),
+    )
+    setup.add_argument(
+        "host",
+        nargs="?",
+        choices=("codex", "claude", "cursor", "vscode"),
+        help="host to configure; omit when using --detect",
+    )
+    setup.add_argument(
+        "--detect",
+        action="store_true",
+        help="configure every detected supported host",
+    )
+    setup.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="show the plan without changing files",
+    )
+    setup.add_argument(
+        "--remove",
+        action="store_true",
+        help="remove only an Arbitype entry previously managed by this command",
+    )
     return parser
 
 
@@ -118,6 +159,8 @@ def main(argv: list[str] | None = None) -> int:
         return _doctor(args)
     if args.command == "evaluate":
         return _evaluate_cli(args)
+    if args.command == "setup":
+        return _setup_cli(args)
     return main_stdio()
 
 

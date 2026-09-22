@@ -26,6 +26,7 @@ CANONICAL_FILES = (
     ROOT / "setup.py",
     ROOT / ".github" / "workflows" / "publish.yml",
     ROOT / ".github" / "workflows" / "publish-mcp.yml",
+    ROOT / ".github" / "workflows" / "ci.yml",
 )
 CHECK_PATHS = (
     "arbitype",
@@ -130,6 +131,7 @@ def run_release_checks(*, skip_sdk: bool) -> None:
     version = __version__
     check_identity_consistency(version)
     run([sys.executable, "scripts/validate_registry_metadata.py", "--version", version])
+    run([sys.executable, "scripts/validate_eval_datasets.py"])
 
     with tempfile.TemporaryDirectory(prefix="arbitype-release-check-") as temporary:
         temporary_root = Path(temporary)

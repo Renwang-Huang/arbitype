@@ -1,0 +1,38 @@
+{
+  "type": "route",
+  "route": "escalate_billing",
+  "answer": {
+    "type": "choice",
+    "choice": "escalate_billing",
+    "probabilities": {
+      "ask_for_receipt": 0.2,
+      "escalate_billing": 0.75,
+      "close_ticket": 0.05
+    },
+    "confidence": 0.75
+  },
+  "model": "jev-1.13.0",
+  "usage": {
+    "input_tokens": 96,
+    "output_tokens": 12
+  },
+  "evaluation": {
+    "model": "jev-1.13.0",
+    "answers": {
+      "next_action": {
+        "type": "choice",
+        "choice": "escalate_billing",
+        "probabilities": {
+          "ask_for_receipt": 0.2,
+          "escalate_billing": 0.75,
+          "close_ticket": 0.05
+        },
+        "confidence": 0.75
+      }
+    },
+    "usage": {
+      "input_tokens": 96,
+      "output_tokens": 12
+    }
+  }
+}

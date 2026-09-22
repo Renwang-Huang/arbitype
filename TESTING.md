@@ -20,7 +20,22 @@ The test suite uses standard-library fakes and does not need an API key. It
 covers request and response validation, credential redaction, retry behavior,
 configuration errors, MCP schemas and annotations, modern metadata and JSON-RPC
 boundaries, bounded STDIO framing and invalid UTF-8, shutdown, tool failures,
-and clean wheel contents.
+clean wheel contents, host setup safety, tool-selection dataset contracts, and
+benchmark scoring.
+
+The offline tool-selection evaluation validates 120 cases and does not invent
+an accuracy result:
+
+```bash
+python3 scripts/run_tool_selection_eval.py --dry-run
+```
+
+The decision-stability evaluation is paid and opt-in. It is never part of
+normal CI:
+
+```bash
+TYPESAFE_API_KEY=your-key python3 scripts/run_stability_benchmark.py --live --repeats 3
+```
 
 The old PyPI package migration was tested against the public
 `typesafe-mcp==0.5.2` wheel. A same-name metadata-only replacement was not

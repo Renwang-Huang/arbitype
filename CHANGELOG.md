@@ -1,5 +1,21 @@
 # Changelog
 
+## Unreleased — 0.7.0 development
+
+### Professionalization and differentiation
+
+- Added safe, host-aware `arbitype setup` flows for Codex, Claude, Cursor, and
+  VS Code with dry runs, backups, idempotency, conflict detection, and
+  environment-only credential forwarding.
+- Clarified all advertised tool descriptions with explicit `USE WHEN` and
+  `DO NOT USE WHEN` boundaries without changing tool semantics.
+- Added a 120-case tool-selection dataset and scoring runner, plus an opt-in
+  repeated-call decision-stability benchmark that never runs in normal CI.
+- Added concise support-routing, PR-verification, release-review, and
+  agent-next-step examples.
+- Pinned GitHub Actions, added provenance attestations, CodeQL, and OpenSSF
+  Scorecard workflows, and documented the observability decision for 0.7.0.
+
 ## 0.6.0 — 2026-09-22
 
 ### Renamed to Arbitype

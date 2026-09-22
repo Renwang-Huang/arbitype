@@ -1,0 +1,15 @@
+{
+  "state": {
+    "version": "0.7.0-rc1",
+    "test_summary": "All required automated tests passed",
+    "artifact": "arbitype-0.7.0-py3-none-any.whl",
+    "open_items": ["security review of the new setup command"]
+  },
+  "checks": {
+    "tests": "The required automated tests pass.",
+    "artifact": "The release artifact has the expected name and metadata.",
+    "security_review": "The new setup command has completed security review."
+  },
+  "pass_at": 0.85,
+  "review_at": 0.60
+}

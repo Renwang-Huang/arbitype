@@ -1,0 +1,17 @@
+{
+  "type": "verification",
+  "answers": {
+    "bounded_retries": {"type": "noul", "noul": 0.96},
+    "timeout_coverage": {"type": "noul", "noul": 0.91},
+    "transport_unchanged": {"type": "noul", "noul": 0.88}
+  },
+  "evaluation": {
+    "model": "jev-1.13.0",
+    "answers": {
+      "bounded_retries": {"type": "noul", "noul": 0.96},
+      "timeout_coverage": {"type": "noul", "noul": 0.91},
+      "transport_unchanged": {"type": "noul", "noul": 0.88}
+    },
+    "usage": {"input_tokens": 126, "output_tokens": 24}
+  }
+}
