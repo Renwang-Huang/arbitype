@@ -59,10 +59,10 @@ uvx arbitype
 The API key stays in the process environment. It is not an MCP argument and
 is never printed to standard output.
 
-For a pinned, reproducible launch:
+For a pinned, reproducible launch after the 0.7.0 release:
 
 ```bash
-uvx --from 'arbitype==0.6.0' arbitype
+uvx --from 'arbitype==0.7.0' arbitype
 ```
 
 Or install the package into the current environment:
@@ -310,8 +310,8 @@ identity.
 The historical `typesafe-mcp` PyPI project remains intact. A metadata-only
 replacement with the same distribution name was tested and rejected because
 pip can remove legacy console-script files while replacing the old
-distribution. Therefore no `typesafe-mcp==0.6.0` migration package will be
-published.
+distribution. Therefore no metadata-only `typesafe-mcp` migration package
+will be published.
 
 Existing users should use this explicit, safe migration:
 
@@ -326,7 +326,9 @@ all three CLI entry points.
 
 ## Discovery and Registry
 
-Arbitype `0.6.0` is available through the main discovery surfaces:
+The release-prep metadata targets Arbitype `0.7.0`. Until that release is
+published, the main discovery surfaces below point to the current public
+entries:
 
 | Surface | Canonical entry |
 | --- | --- |
@@ -456,7 +458,7 @@ Arbitype keeps two different questions separate:
 
 ## Release identity
 
-Arbitype is currently released as `0.6.0` because it remains Beta while its
-canonical public identity moves to the new package, CLI, and Registry name.
-The old package history remains intact; the brand migration does not rewrite
-Git history or delete the former PyPI project.
+Arbitype is prepared as `0.7.0` while remaining Beta. The artifact is not
+publicly released until the release workflow completes. The old package
+history remains intact; the brand migration does not rewrite Git history or
+delete the former PyPI project.

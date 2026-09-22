@@ -1,8 +1,9 @@
 # Arbitype engineering comparison and verification
 
 This document records the engineering comparison and local verification used
-for the 0.7.0 development review. The currently published package remains
-0.6.0; no 0.7.0 artifact is implied by this document.
+for the 0.7.0 release preparation. The currently published package remains
+0.6.0 until the release workflow completes; no public 0.7.0 artifact is
+implied by this document.
 The repositories were inspected through their public source, documentation,
 and test layouts on 2026-09-21. GitHub star counts are only a snapshot, not a
 quality ranking. This project was also exercised against the real TypeSafe API

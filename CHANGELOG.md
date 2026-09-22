@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased — 0.7.0 development
+## 0.7.0 — 2026-09-22
 
 ### Professionalization and differentiation
 
@@ -11,10 +11,27 @@
   `DO NOT USE WHEN` boundaries without changing tool semantics.
 - Added a 120-case tool-selection dataset and scoring runner, plus an opt-in
   repeated-call decision-stability benchmark that never runs in normal CI.
+- Recorded a 96.67% Jev-mediated tool-selection result over Arbitype's
+  advertised MCP tool catalog. This is not a Codex, Claude, or Cursor host
+  benchmark and is not a general model-performance guarantee.
+- Corrected stability reporting to calculate probability mean, standard
+  deviation, range, mean absolute delta, and decision consistency per case;
+  pooled probability statistics are explicitly labeled as a global
+  distribution rather than a repeatability measure.
 - Added concise support-routing, PR-verification, release-review, and
   agent-next-step examples.
 - Pinned GitHub Actions, added provenance attestations and CodeQL, evaluated
   OpenSSF Scorecard, and documented the observability decision for 0.7.0.
+- Added a protected `main`-branch ruleset with strict required checks and no
+  bypass, while keeping the runtime dependency-free.
+
+### Benchmark scope
+
+This result is a Jev-mediated tool-selection benchmark over Arbitype's
+advertised MCP tool catalog.
+
+It is not a Codex, Claude, or Cursor host benchmark and is not a general
+model-performance guarantee.
 
 ## 0.6.0 — 2026-09-22
 
