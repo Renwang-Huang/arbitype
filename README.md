@@ -11,15 +11,15 @@
 <p>
   <a href="https://github.com/Renwang-Huang/arbitype/actions/workflows/ci.yml"><img src="https://github.com/Renwang-Huang/arbitype/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="https://github.com/Renwang-Huang/arbitype/releases"><img src="https://img.shields.io/github/v/release/Renwang-Huang/arbitype?display_name=tag&sort=semver" alt="Latest release"></a>
-  <a href="https://pypi.org/project/arbitype/"><img src="https://img.shields.io/badge/PyPI-0.6.0%20pending-lightgrey" alt="Arbitype PyPI publication pending"></a>
+  <a href="https://pypi.org/project/arbitype/"><img src="https://img.shields.io/pypi/v/arbitype?logo=pypi&logoColor=white" alt="Arbitype on PyPI"></a>
   <a href="https://github.com/Renwang-Huang/arbitype/blob/main/LICENSE"><img src="https://img.shields.io/github/license/Renwang-Huang/arbitype" alt="MIT license"></a>
   <img src="https://img.shields.io/badge/python-3.10%2B-3776AB?logo=python&logoColor=white" alt="Python 3.10 or newer">
   <a href="https://github.com/modelcontextprotocol/modelcontextprotocol/tree/main/docs/specification/2026-07-28"><img src="https://img.shields.io/badge/MCP-2026--07--28-6F42C1" alt="MCP 2026-07-28"></a>
 </p>
 
 <p>
-  <a href="https://registry.modelcontextprotocol.io/?q=io.github.Renwang-Huang%2Farbitype"><img src="https://img.shields.io/badge/MCP%20Registry-0.6.0%20pending-lightgrey" alt="Arbitype MCP Registry publication pending"></a>
-  <a href="https://glama.ai/mcp/servers/Renwang-Huang/arbitype"><img src="https://img.shields.io/badge/Glama-crawl%20pending-lightgrey" alt="Arbitype Glama crawl pending"></a>
+  <a href="https://registry.modelcontextprotocol.io/?q=io.github.Renwang-Huang%2Farbitype"><img src="https://img.shields.io/badge/MCP%20Registry-listed-2ea44f" alt="Arbitype listed in the MCP Registry"></a>
+  <a href="https://glama.ai/mcp/servers/Renwang-Huang/arbitype"><img src="https://img.shields.io/badge/Glama-listed-2ea44f" alt="Arbitype listed on Glama"></a>
 </p>
 
 <p>
@@ -28,6 +28,9 @@
   <a href="#tools">Tools</a> ·
   <a href="#host-setup">Host setup</a> ·
   <a href="#configuration">Configuration</a> ·
+  <a href="https://pypi.org/project/arbitype/">PyPI</a> ·
+  <a href="https://registry.modelcontextprotocol.io/?q=io.github.Renwang-Huang%2Farbitype">MCP Registry</a> ·
+  <a href="https://glama.ai/mcp/servers/Renwang-Huang/arbitype">Glama</a> ·
   <a href="BENCHMARK.md">Engineering benchmark</a>
 </p>
 
@@ -45,7 +48,8 @@ structured decision primitives that an agent or program can consume directly.
 
 ## Quick start
 
-The shortest path is a local STDIO server launched by `uvx`:
+The fastest way to connect an MCP host is a local STDIO server launched by
+`uvx`:
 
 ```bash
 export TYPESAFE_API_KEY="your-key"
@@ -55,10 +59,17 @@ uvx arbitype
 The API key stays in the process environment. It is not an MCP argument and
 is never printed to standard output.
 
-Install a pinned release with:
+For a pinned, reproducible launch:
 
 ```bash
 uvx --from 'arbitype==0.6.0' arbitype
+```
+
+Or install the package into the current environment:
+
+```bash
+python -m pip install arbitype
+arbitype
 ```
 
 Or run the repository checkout:
@@ -123,7 +134,7 @@ Arbitype advertises nine read-only, idempotent MCP tools:
 | `evaluate` | `state` + TypeSafe `questions` map | Raw typed Jev response |
 | `classify` | `state` + `instructions` + `labels` | Choice and probability distribution |
 | `score` | `state` + `instructions` + ordered `levels` | Weighted score and distribution |
-| `check` | `state` + yes/no criteria | Noul probability |
+| `check` | `state` + yes/no criteria | Noul (yes/no) probability |
 | `verify` | `state` + `claims` map | Noul answer per claim |
 | `gate` | `state` + `checks` + thresholds | `pass`, `review`, or `fail` signal |
 | `route` | `state` + `actions` map | One suggested next action; no execution |
@@ -141,7 +152,8 @@ boundaries, or approval engines.
 
 ## Host setup
 
-Arbitype uses standard MCP STDIO. For a host that accepts an installed command:
+Arbitype uses standard MCP STDIO. For a host that accepts this command-style
+configuration:
 
 ```toml
 [mcp_servers.arbitype]
@@ -163,9 +175,10 @@ startup_timeout_sec = 10
 tool_timeout_sec = 60
 ```
 
-The same process can be registered by Claude, Cursor, VS Code, Codex, or any
-other MCP host using its native configuration format. Keep the key out of host
-configuration files; use the host's environment forwarding mechanism.
+Translate the same `command`, arguments, and environment forwarding fields to
+the native configuration format of Claude, Cursor, VS Code, Codex, or another
+MCP host. Keep the key out of host configuration files whenever possible; use
+the host's environment forwarding mechanism.
 
 ## CLI and Python
 
@@ -244,22 +257,30 @@ all three CLI entry points.
 
 ## Discovery and Registry
 
+Arbitype `0.6.0` is available through the main discovery surfaces:
+
+| Surface | Canonical entry |
+| --- | --- |
+| PyPI | [`arbitype`](https://pypi.org/project/arbitype/) |
+| MCP Registry | [`io.github.Renwang-Huang/arbitype`](https://registry.modelcontextprotocol.io/?q=io.github.Renwang-Huang%2Farbitype) |
+| Glama | [`Renwang-Huang/arbitype`](https://glama.ai/mcp/servers/Renwang-Huang/arbitype) |
+
 The canonical MCP Registry identity is:
 
 ```text
 io.github.Renwang-Huang/arbitype
 ```
 
-The intended package entry is:
+The package entry used by the Registry is:
 
 ```text
 uvx arbitype
 ```
 
-The PyPI, MCP Registry, and Glama links are prepared before publication, but
-their badges remain explicitly marked pending until the external listings are
-verified. Release ordering and the legacy Registry migration procedure are
-documented in [docs/REGISTRY_MIGRATION.md](docs/REGISTRY_MIGRATION.md).
+Release ordering and the legacy Registry migration procedure are documented in
+[docs/REGISTRY_MIGRATION.md](docs/REGISTRY_MIGRATION.md). The Registry entry
+uses PyPI and starts the server with `uvx`, so hosts do not need a repository
+checkout.
 
 The former identity `io.github.Renwang-Huang/typesafe-mcp` is a legacy
 identity. It must remain available for existing users and should be marked
