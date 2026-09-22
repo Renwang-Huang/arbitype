@@ -35,7 +35,7 @@ here instead of inherited from an SDK.
 | Server features | Tools only; resources/prompts are not advertised | Frameworks commonly expose tools, resources, prompts, subscriptions, elicitation | Correctly narrow for Jev; do not add unused surface just for parity |
 | Schemas | Strict input validation and per-tool output schemas | Generated or typed schemas plus runtime validation | Competitive for this fixed contract |
 | Reliability | Bounded retries, `Retry-After`, size limits, redaction, fail-closed provider validation | Mature projects add async cancellation, tracing, and broader fault injection | Good local reliability; cancellation/telemetry remain next steps |
-| Testing | 76 offline tests, subprocess lifecycle tests, a 120-case tool-selection dataset, opt-in stability benchmark, and official SDK v2 smoke in CI | Large projects add conformance suites, cross-client evals, coverage gates | Stronger contract/evaluation surface; no synthetic accuracy claim and not a replacement for cross-client evaluation |
+| Testing | 77 offline tests, subprocess lifecycle tests, a 120-case tool-selection dataset, an opt-in stability benchmark, a real host + Jev selection report, and official SDK v2 smoke in CI | Large projects add conformance suites, cross-client evals, coverage gates | Stronger contract/evaluation surface; no universal performance claim and not a replacement for cross-client evaluation |
 | Security | Environment-only secret, read-only annotations, no file/command execution, bounded diagnostics | HTTP servers add OAuth, token audience checks, sandboxing and scanners | Safe for local STDIO; not an authenticated remote service |
 | Release engineering | Matrix CI, wheel inspection, clean install, compatibility aliases | Mature projects add signed artifacts, automated publishing, dependency/update gates | Solid foundation; signed releases and registry publishing remain |
 
@@ -52,7 +52,7 @@ here instead of inherited from an SDK.
 
 ## Local results
 
-- Arbitype: 76 offline tests passed, followed by real Jev requests through
+- Arbitype: 77 offline tests passed, followed by real Jev requests through
   the MCP STDIO process. The live response returned `jev-1.13.0`, all three
   question types, and token usage; response validation accepted it.
 - `@jkudish/jev-mcp`: build and unit/mock suite passed (the repository's
@@ -70,11 +70,11 @@ here instead of inherited from an SDK.
 
 ## Host and protocol verification
 
-- 76 local unit and integration tests pass with no network access and no API key.
+- 77 local unit and integration tests pass with no network access and no API key.
 - The public tool-selection corpus contains 120 balanced cases (15 per
-  advertised decision path). Dataset validation and scoring run offline; no
-  accuracy number is reported until a real host/model adapter supplies
-  predictions.
+  advertised decision path). A reproducible local STDIO + TypeSafe Jev run is
+  recorded in `evals/reports/tool-selection-2026-09-22.json`; its result is a
+  single benchmark sample, not a universal performance guarantee.
 - The decision-stability corpus contains 8 fixed live cases. It is opt-in,
   requires `TYPESAFE_API_KEY`, and reports selected-decision consistency,
   probability statistics, latency, and usage without running in CI.

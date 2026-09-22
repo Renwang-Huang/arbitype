@@ -13,8 +13,8 @@
   repeated-call decision-stability benchmark that never runs in normal CI.
 - Added concise support-routing, PR-verification, release-review, and
   agent-next-step examples.
-- Pinned GitHub Actions, added provenance attestations, CodeQL, and OpenSSF
-  Scorecard workflows, and documented the observability decision for 0.7.0.
+- Pinned GitHub Actions, added provenance attestations and CodeQL, evaluated
+  OpenSSF Scorecard, and documented the observability decision for 0.7.0.
 
 ## 0.6.0 — 2026-09-22
 

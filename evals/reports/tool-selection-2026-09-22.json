@@ -1,0 +1,718 @@
+{
+  "benchmark": "arbitype-tool-selection",
+  "dataset": {
+    "cases": 120,
+    "commit": "9c223904b2030de59e1187c4b600872cc4c965da",
+    "path": "evals/tool_selection/cases.jsonl"
+  },
+  "generated_at": "2026-09-22T06:18:50Z",
+  "host": {
+    "advertised_tool_count": 9,
+    "command": [
+      "/usr/bin/python3",
+      "-m",
+      "arbitype"
+    ],
+    "name": "Arbitype local STDIO MCP host",
+    "protocol_version": "2025-06-18"
+  },
+  "model": {
+    "provider": "TypeSafe Jev",
+    "requested": "jev-latest",
+    "resolved": [
+      "jev-1.13.0"
+    ],
+    "settings_note": "This adapter does not expose a temperature setting.",
+    "temperature": null
+  },
+  "predictions": [
+    {
+      "id": "evaluate-001",
+      "schema_valid": true,
+      "selected_tool": "evaluate"
+    },
+    {
+      "id": "evaluate-002",
+      "schema_valid": true,
+      "selected_tool": "evaluate"
+    },
+    {
+      "id": "evaluate-003",
+      "schema_valid": true,
+      "selected_tool": "gate"
+    },
+    {
+      "id": "evaluate-004",
+      "schema_valid": true,
+      "selected_tool": "evaluate"
+    },
+    {
+      "id": "evaluate-005",
+      "schema_valid": true,
+      "selected_tool": "evaluate"
+    },
+    {
+      "id": "evaluate-006",
+      "schema_valid": true,
+      "selected_tool": "review"
+    },
+    {
+      "id": "evaluate-007",
+      "schema_valid": true,
+      "selected_tool": "evaluate"
+    },
+    {
+      "id": "evaluate-008",
+      "schema_valid": true,
+      "selected_tool": "evaluate"
+    },
+    {
+      "id": "evaluate-009",
+      "schema_valid": true,
+      "selected_tool": "evaluate"
+    },
+    {
+      "id": "evaluate-010",
+      "schema_valid": true,
+      "selected_tool": "evaluate"
+    },
+    {
+      "id": "evaluate-011",
+      "schema_valid": true,
+      "selected_tool": "evaluate"
+    },
+    {
+      "id": "evaluate-012",
+      "schema_valid": true,
+      "selected_tool": "evaluate"
+    },
+    {
+      "id": "evaluate-013",
+      "schema_valid": true,
+      "selected_tool": "review"
+    },
+    {
+      "id": "evaluate-014",
+      "schema_valid": true,
+      "selected_tool": "evaluate"
+    },
+    {
+      "id": "evaluate-015",
+      "schema_valid": true,
+      "selected_tool": "evaluate"
+    },
+    {
+      "id": "classify-001",
+      "schema_valid": true,
+      "selected_tool": "classify"
+    },
+    {
+      "id": "classify-002",
+      "schema_valid": true,
+      "selected_tool": "classify"
+    },
+    {
+      "id": "classify-003",
+      "schema_valid": true,
+      "selected_tool": "classify"
+    },
+    {
+      "id": "classify-004",
+      "schema_valid": true,
+      "selected_tool": "classify"
+    },
+    {
+      "id": "classify-005",
+      "schema_valid": true,
+      "selected_tool": "classify"
+    },
+    {
+      "id": "classify-006",
+      "schema_valid": true,
+      "selected_tool": "classify"
+    },
+    {
+      "id": "classify-007",
+      "schema_valid": true,
+      "selected_tool": "classify"
+    },
+    {
+      "id": "classify-008",
+      "schema_valid": true,
+      "selected_tool": "classify"
+    },
+    {
+      "id": "classify-009",
+      "schema_valid": true,
+      "selected_tool": "classify"
+    },
+    {
+      "id": "classify-010",
+      "schema_valid": true,
+      "selected_tool": "classify"
+    },
+    {
+      "id": "classify-011",
+      "schema_valid": true,
+      "selected_tool": "classify"
+    },
+    {
+      "id": "classify-012",
+      "schema_valid": true,
+      "selected_tool": "classify"
+    },
+    {
+      "id": "classify-013",
+      "schema_valid": true,
+      "selected_tool": "classify"
+    },
+    {
+      "id": "classify-014",
+      "schema_valid": true,
+      "selected_tool": "classify"
+    },
+    {
+      "id": "classify-015",
+      "schema_valid": true,
+      "selected_tool": "classify"
+    },
+    {
+      "id": "score-001",
+      "schema_valid": true,
+      "selected_tool": "score"
+    },
+    {
+      "id": "score-002",
+      "schema_valid": true,
+      "selected_tool": "score"
+    },
+    {
+      "id": "score-003",
+      "schema_valid": true,
+      "selected_tool": "score"
+    },
+    {
+      "id": "score-004",
+      "schema_valid": true,
+      "selected_tool": "score"
+    },
+    {
+      "id": "score-005",
+      "schema_valid": true,
+      "selected_tool": "score"
+    },
+    {
+      "id": "score-006",
+      "schema_valid": true,
+      "selected_tool": "score"
+    },
+    {
+      "id": "score-007",
+      "schema_valid": true,
+      "selected_tool": "score"
+    },
+    {
+      "id": "score-008",
+      "schema_valid": true,
+      "selected_tool": "score"
+    },
+    {
+      "id": "score-009",
+      "schema_valid": true,
+      "selected_tool": "score"
+    },
+    {
+      "id": "score-010",
+      "schema_valid": true,
+      "selected_tool": "score"
+    },
+    {
+      "id": "score-011",
+      "schema_valid": true,
+      "selected_tool": "score"
+    },
+    {
+      "id": "score-012",
+      "schema_valid": true,
+      "selected_tool": "score"
+    },
+    {
+      "id": "score-013",
+      "schema_valid": true,
+      "selected_tool": "score"
+    },
+    {
+      "id": "score-014",
+      "schema_valid": true,
+      "selected_tool": "score"
+    },
+    {
+      "id": "score-015",
+      "schema_valid": true,
+      "selected_tool": "score"
+    },
+    {
+      "id": "check-001",
+      "schema_valid": true,
+      "selected_tool": "check"
+    },
+    {
+      "id": "check-002",
+      "schema_valid": true,
+      "selected_tool": "check"
+    },
+    {
+      "id": "check-003",
+      "schema_valid": true,
+      "selected_tool": "check"
+    },
+    {
+      "id": "check-004",
+      "schema_valid": true,
+      "selected_tool": "check"
+    },
+    {
+      "id": "check-005",
+      "schema_valid": true,
+      "selected_tool": "check"
+    },
+    {
+      "id": "check-006",
+      "schema_valid": true,
+      "selected_tool": "review"
+    },
+    {
+      "id": "check-007",
+      "schema_valid": true,
+      "selected_tool": "check"
+    },
+    {
+      "id": "check-008",
+      "schema_valid": true,
+      "selected_tool": "check"
+    },
+    {
+      "id": "check-009",
+      "schema_valid": true,
+      "selected_tool": "check"
+    },
+    {
+      "id": "check-010",
+      "schema_valid": true,
+      "selected_tool": "check"
+    },
+    {
+      "id": "check-011",
+      "schema_valid": true,
+      "selected_tool": "check"
+    },
+    {
+      "id": "check-012",
+      "schema_valid": true,
+      "selected_tool": "check"
+    },
+    {
+      "id": "check-013",
+      "schema_valid": true,
+      "selected_tool": "check"
+    },
+    {
+      "id": "check-014",
+      "schema_valid": true,
+      "selected_tool": "check"
+    },
+    {
+      "id": "check-015",
+      "schema_valid": true,
+      "selected_tool": "check"
+    },
+    {
+      "id": "verify-001",
+      "schema_valid": true,
+      "selected_tool": "verify"
+    },
+    {
+      "id": "verify-002",
+      "schema_valid": true,
+      "selected_tool": "verify"
+    },
+    {
+      "id": "verify-003",
+      "schema_valid": true,
+      "selected_tool": "verify"
+    },
+    {
+      "id": "verify-004",
+      "schema_valid": true,
+      "selected_tool": "verify"
+    },
+    {
+      "id": "verify-005",
+      "schema_valid": true,
+      "selected_tool": "verify"
+    },
+    {
+      "id": "verify-006",
+      "schema_valid": true,
+      "selected_tool": "verify"
+    },
+    {
+      "id": "verify-007",
+      "schema_valid": true,
+      "selected_tool": "verify"
+    },
+    {
+      "id": "verify-008",
+      "schema_valid": true,
+      "selected_tool": "verify"
+    },
+    {
+      "id": "verify-009",
+      "schema_valid": true,
+      "selected_tool": "verify"
+    },
+    {
+      "id": "verify-010",
+      "schema_valid": true,
+      "selected_tool": "verify"
+    },
+    {
+      "id": "verify-011",
+      "schema_valid": true,
+      "selected_tool": "verify"
+    },
+    {
+      "id": "verify-012",
+      "schema_valid": true,
+      "selected_tool": "verify"
+    },
+    {
+      "id": "verify-013",
+      "schema_valid": true,
+      "selected_tool": "verify"
+    },
+    {
+      "id": "verify-014",
+      "schema_valid": true,
+      "selected_tool": "verify"
+    },
+    {
+      "id": "verify-015",
+      "schema_valid": true,
+      "selected_tool": "verify"
+    },
+    {
+      "id": "gate-001",
+      "schema_valid": true,
+      "selected_tool": "gate"
+    },
+    {
+      "id": "gate-002",
+      "schema_valid": true,
+      "selected_tool": "gate"
+    },
+    {
+      "id": "gate-003",
+      "schema_valid": true,
+      "selected_tool": "gate"
+    },
+    {
+      "id": "gate-004",
+      "schema_valid": true,
+      "selected_tool": "gate"
+    },
+    {
+      "id": "gate-005",
+      "schema_valid": true,
+      "selected_tool": "gate"
+    },
+    {
+      "id": "gate-006",
+      "schema_valid": true,
+      "selected_tool": "gate"
+    },
+    {
+      "id": "gate-007",
+      "schema_valid": true,
+      "selected_tool": "gate"
+    },
+    {
+      "id": "gate-008",
+      "schema_valid": true,
+      "selected_tool": "gate"
+    },
+    {
+      "id": "gate-009",
+      "schema_valid": true,
+      "selected_tool": "gate"
+    },
+    {
+      "id": "gate-010",
+      "schema_valid": true,
+      "selected_tool": "gate"
+    },
+    {
+      "id": "gate-011",
+      "schema_valid": true,
+      "selected_tool": "gate"
+    },
+    {
+      "id": "gate-012",
+      "schema_valid": true,
+      "selected_tool": "gate"
+    },
+    {
+      "id": "gate-013",
+      "schema_valid": true,
+      "selected_tool": "gate"
+    },
+    {
+      "id": "gate-014",
+      "schema_valid": true,
+      "selected_tool": "gate"
+    },
+    {
+      "id": "gate-015",
+      "schema_valid": true,
+      "selected_tool": "gate"
+    },
+    {
+      "id": "route-001",
+      "schema_valid": true,
+      "selected_tool": "route"
+    },
+    {
+      "id": "route-002",
+      "schema_valid": true,
+      "selected_tool": "route"
+    },
+    {
+      "id": "route-003",
+      "schema_valid": true,
+      "selected_tool": "route"
+    },
+    {
+      "id": "route-004",
+      "schema_valid": true,
+      "selected_tool": "route"
+    },
+    {
+      "id": "route-005",
+      "schema_valid": true,
+      "selected_tool": "route"
+    },
+    {
+      "id": "route-006",
+      "schema_valid": true,
+      "selected_tool": "route"
+    },
+    {
+      "id": "route-007",
+      "schema_valid": true,
+      "selected_tool": "route"
+    },
+    {
+      "id": "route-008",
+      "schema_valid": true,
+      "selected_tool": "route"
+    },
+    {
+      "id": "route-009",
+      "schema_valid": true,
+      "selected_tool": "route"
+    },
+    {
+      "id": "route-010",
+      "schema_valid": true,
+      "selected_tool": "route"
+    },
+    {
+      "id": "route-011",
+      "schema_valid": true,
+      "selected_tool": "route"
+    },
+    {
+      "id": "route-012",
+      "schema_valid": true,
+      "selected_tool": "route"
+    },
+    {
+      "id": "route-013",
+      "schema_valid": true,
+      "selected_tool": "route"
+    },
+    {
+      "id": "route-014",
+      "schema_valid": true,
+      "selected_tool": "route"
+    },
+    {
+      "id": "route-015",
+      "schema_valid": true,
+      "selected_tool": "route"
+    },
+    {
+      "id": "review-001",
+      "schema_valid": true,
+      "selected_tool": "review"
+    },
+    {
+      "id": "review-002",
+      "schema_valid": true,
+      "selected_tool": "review"
+    },
+    {
+      "id": "review-003",
+      "schema_valid": true,
+      "selected_tool": "review"
+    },
+    {
+      "id": "review-004",
+      "schema_valid": true,
+      "selected_tool": "review"
+    },
+    {
+      "id": "review-005",
+      "schema_valid": true,
+      "selected_tool": "review"
+    },
+    {
+      "id": "review-006",
+      "schema_valid": true,
+      "selected_tool": "review"
+    },
+    {
+      "id": "review-007",
+      "schema_valid": true,
+      "selected_tool": "review"
+    },
+    {
+      "id": "review-008",
+      "schema_valid": true,
+      "selected_tool": "review"
+    },
+    {
+      "id": "review-009",
+      "schema_valid": true,
+      "selected_tool": "review"
+    },
+    {
+      "id": "review-010",
+      "schema_valid": true,
+      "selected_tool": "review"
+    },
+    {
+      "id": "review-011",
+      "schema_valid": true,
+      "selected_tool": "review"
+    },
+    {
+      "id": "review-012",
+      "schema_valid": true,
+      "selected_tool": "review"
+    },
+    {
+      "id": "review-013",
+      "schema_valid": true,
+      "selected_tool": "review"
+    },
+    {
+      "id": "review-014",
+      "schema_valid": true,
+      "selected_tool": "review"
+    },
+    {
+      "id": "review-015",
+      "schema_valid": true,
+      "selected_tool": "review"
+    }
+  ],
+  "runtime": {
+    "api_key_recorded": false,
+    "elapsed_seconds": 135.944,
+    "provider_errors": 0
+  },
+  "score": {
+    "cases": 120,
+    "confusion_matrix": {
+      "check": {
+        "check": 14,
+        "review": 1
+      },
+      "classify": {
+        "classify": 15
+      },
+      "evaluate": {
+        "evaluate": 12,
+        "gate": 1,
+        "review": 2
+      },
+      "gate": {
+        "gate": 15
+      },
+      "review": {
+        "review": 15
+      },
+      "route": {
+        "route": 15
+      },
+      "score": {
+        "score": 15
+      },
+      "verify": {
+        "verify": 15
+      }
+    },
+    "definition": {
+      "acceptable_tools": "A prediction is correct when selected_tool is in the case's acceptable_tools.",
+      "invalid_tool_call_rate": "Fraction of cases with no advertised tool selected.",
+      "schema_valid_call_rate": "Fraction of valid tool selections explicitly marked schema_valid=true by the adapter."
+    },
+    "invalid_tool_call_rate": 0.0,
+    "per_tool_accuracy": {
+      "check": {
+        "accuracy": 0.933333,
+        "correct": 14,
+        "total": 15
+      },
+      "classify": {
+        "accuracy": 1.0,
+        "correct": 15,
+        "total": 15
+      },
+      "evaluate": {
+        "accuracy": 0.8,
+        "correct": 12,
+        "total": 15
+      },
+      "gate": {
+        "accuracy": 1.0,
+        "correct": 15,
+        "total": 15
+      },
+      "review": {
+        "accuracy": 1.0,
+        "correct": 15,
+        "total": 15
+      },
+      "route": {
+        "accuracy": 1.0,
+        "correct": 15,
+        "total": 15
+      },
+      "score": {
+        "accuracy": 1.0,
+        "correct": 15,
+        "total": 15
+      },
+      "verify": {
+        "accuracy": 1.0,
+        "correct": 15,
+        "total": 15
+      }
+    },
+    "schema_valid_call_rate": 1.0,
+    "tool_selection_accuracy": 0.966667
+  },
+  "scoring_note": "schema_valid_call_rate validates deterministic fixture arguments against the actual tools/list input schema; the public dataset contains no model-generated arguments."
+}

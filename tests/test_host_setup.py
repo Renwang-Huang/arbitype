@@ -32,7 +32,7 @@ class HostSetupTests(unittest.TestCase):
             "os.environ", {"TYPESAFE_API_KEY": secret}, clear=False
         ):
             home = Path(directory)
-            self.assertEqual(run_setup("cursor", home=home), 0)
+            self.assertEqual(run_setup("cursor", home=home, yes=True), 0)
             path = home / ".cursor" / "mcp.json"
             sidecar = home / ".cursor" / ".mcp.json.arbitype-managed.json"
             content = path.read_text(encoding="utf-8")
@@ -42,7 +42,7 @@ class HostSetupTests(unittest.TestCase):
 
             output = StringIO()
             with redirect_stdout(output):
-                self.assertEqual(run_setup("cursor", home=home), 0)
+                self.assertEqual(run_setup("cursor", home=home, yes=True), 0)
             self.assertIn("already configured", output.getvalue())
             self.assertEqual(path.read_text(encoding="utf-8"), content)
 
@@ -53,15 +53,15 @@ class HostSetupTests(unittest.TestCase):
             path.parent.mkdir(parents=True)
             original = {"mcpServers": {"arbitype": {"command": "python", "args": ["other.py"]}}}
             path.write_text(json.dumps(original), encoding="utf-8")
-            self.assertEqual(run_setup("cursor", home=home), 1)
+            self.assertEqual(run_setup("cursor", home=home, yes=True), 1)
             self.assertEqual(json.loads(path.read_text(encoding="utf-8")), original)
 
     def test_remove_only_removes_owned_json_entry_and_creates_backup(self):
         with tempfile.TemporaryDirectory() as directory:
             home = Path(directory)
             path = home / ".cursor" / "mcp.json"
-            self.assertEqual(run_setup("cursor", home=home), 0)
-            self.assertEqual(run_setup("cursor", remove=True, home=home), 0)
+            self.assertEqual(run_setup("cursor", home=home, yes=True), 0)
+            self.assertEqual(run_setup("cursor", remove=True, home=home, yes=True), 0)
             self.assertNotIn("arbitype", json.loads(path.read_text(encoding="utf-8")).get("mcpServers", {}))
             self.assertFalse((path.parent / ".mcp.json.arbitype-managed.json").exists())
             self.assertTrue(list(path.parent.glob("mcp.json.arbitype-backup-*")))
@@ -72,19 +72,19 @@ class HostSetupTests(unittest.TestCase):
             config = home / ".codex" / "config.toml"
             config.parent.mkdir(parents=True)
             config.write_text('[profiles.default]\nmodel = "test"\n', encoding="utf-8")
-            self.assertEqual(run_setup("codex", home=home), 0)
+            self.assertEqual(run_setup("codex", home=home, yes=True), 0)
             content = config.read_text(encoding="utf-8")
             self.assertIn("[mcp_servers.arbitype]", content)
             self.assertIn('env_vars = ["TYPESAFE_API_KEY"]', content)
             self.assertIn("BEGIN ARBITYPE MANAGED", content)
-            self.assertEqual(run_setup("codex", remove=True, home=home), 0)
+            self.assertEqual(run_setup("codex", remove=True, home=home, yes=True), 0)
             self.assertNotIn("[mcp_servers.arbitype]", config.read_text(encoding="utf-8"))
 
     def test_vscode_setup_uses_password_input_not_a_secret(self):
         with tempfile.TemporaryDirectory() as directory:
             home = Path(directory)
             with patch("arbitype.host_setup._vscode_path", return_value=home / ".config" / "Code" / "User" / "mcp.json"):
-                self.assertEqual(run_setup("vscode", home=home), 0)
+                self.assertEqual(run_setup("vscode", home=home, yes=True), 0)
             path = home / ".config" / "Code" / "User" / "mcp.json"
             data = json.loads(path.read_text(encoding="utf-8"))
             self.assertEqual(data["servers"]["arbitype"]["env"]["TYPESAFE_API_KEY"], "${input:typesafe-api-key}")
@@ -95,8 +95,57 @@ class HostSetupTests(unittest.TestCase):
             host_setup.os, "fchmod", None, create=True
         ):
             home = Path(directory)
-            self.assertEqual(run_setup("cursor", home=home), 0)
+            self.assertEqual(run_setup("cursor", home=home, yes=True), 0)
             self.assertTrue((home / ".cursor" / "mcp.json").exists())
+
+    def test_noninteractive_write_requires_yes(self):
+        with tempfile.TemporaryDirectory() as directory, patch.object(
+            host_setup.os.sys.stdin, "isatty", return_value=False
+        ):
+            home = Path(directory)
+            self.assertEqual(run_setup("cursor", home=home), 2)
+            self.assertFalse((home / ".cursor" / "mcp.json").exists())
+
+    def test_interactive_decline_does_not_write(self):
+        with tempfile.TemporaryDirectory() as directory, patch.object(
+            host_setup.os.sys.stdin, "isatty", return_value=True
+        ), patch.object(host_setup.os.sys.stdout, "isatty", return_value=True), patch(
+            "builtins.input", return_value=""
+        ):
+            home = Path(directory)
+            self.assertEqual(run_setup("cursor", home=home), 2)
+            self.assertFalse((home / ".cursor" / "mcp.json").exists())
+
+    def test_confirmation_shows_unified_diff(self):
+        with tempfile.TemporaryDirectory() as directory:
+            home = Path(directory)
+            output = StringIO()
+            with redirect_stdout(output):
+                self.assertEqual(run_setup("cursor", home=home, yes=True), 0)
+            self.assertIn("Unified diff for cursor:", output.getvalue())
+            self.assertIn("+++", output.getvalue())
+
+    def test_detect_lists_all_supported_targets_before_dry_run(self):
+        with tempfile.TemporaryDirectory() as directory, patch.object(
+            host_setup, "_command_available", return_value=True
+        ):
+            output = StringIO()
+            with redirect_stdout(output):
+                self.assertEqual(
+                    run_setup("ignored", detect=True, dry_run=True, home=Path(directory)),
+                    2,
+                )
+            # A positional host and --detect are intentionally rejected before
+            # detection; the CLI itself supplies no positional host in this mode.
+            self.assertNotIn("detected hosts:", output.getvalue())
+
+        with tempfile.TemporaryDirectory() as directory, patch.object(
+            host_setup, "_command_available", return_value=True
+        ):
+            output = StringIO()
+            with redirect_stdout(output):
+                self.assertEqual(run_setup(detect=True, dry_run=True, home=Path(directory)), 0)
+            self.assertIn("detected hosts: codex, claude, cursor, vscode", output.getvalue())
 
 
 if __name__ == "__main__":

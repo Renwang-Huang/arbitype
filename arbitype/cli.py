@@ -98,6 +98,7 @@ def _setup_cli(args: argparse.Namespace) -> int:
         detect=args.detect,
         dry_run=args.dry_run,
         remove=args.remove,
+        yes=args.yes,
     )
 
 
@@ -148,6 +149,11 @@ def build_parser() -> argparse.ArgumentParser:
         "--remove",
         action="store_true",
         help="remove only an Arbitype entry previously managed by this command",
+    )
+    setup.add_argument(
+        "--yes",
+        action="store_true",
+        help="apply without an interactive confirmation (required in non-interactive use)",
     )
     return parser
 

@@ -71,3 +71,22 @@ The report includes:
 
 No live adapter is part of normal CI. Store real prediction files outside the
 repository when they contain private prompts or provider output.
+
+## Reproducible local host + Jev run
+
+The repository includes an opt-in adapter that starts the checked-out Arbitype
+STDIO server, reads its real `tools/list` catalog, and uses TypeSafe Jev for
+each selection:
+
+```bash
+TYPESAFE_API_KEY="..." \
+  python scripts/run_tool_selection_live.py \
+    --output evals/reports/tool-selection-YYYY-MM-DD.json
+```
+
+The report records the host, protocol, resolved model, dataset commit, UTC
+timestamp, and aggregate scores. It does not record the API key or raw model
+responses. Because the dataset contains prompts but not generated arguments,
+`schema_valid_call_rate` checks deterministic fixture arguments against the
+actual `tools/list` input schemas; it is not a claim about model-generated
+argument quality.

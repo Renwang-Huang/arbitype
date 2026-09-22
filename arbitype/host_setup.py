@@ -13,6 +13,7 @@ import platform
 import re
 import shutil
 import tempfile
+from difflib import unified_diff
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -49,6 +50,7 @@ class SetupPlan:
     sidecar_content: str | None = None
     remove_sidecar: bool = False
     backup_required: bool = False
+    original_content: str | None = None
 
 
 def _command_available(*commands: str) -> bool:
@@ -226,6 +228,7 @@ def _json_text(value: dict[str, Any]) -> str:
 
 
 def _prepare_json(spec: HostSpec, *, remove: bool) -> SetupPlan:
+    original_content = _read_text(spec.path) if spec.path.exists() else ""
     data, existed = _load_json(spec.path)
     root_key = spec.root_key
     assert root_key is not None
@@ -263,6 +266,7 @@ def _prepare_json(spec: HostSpec, *, remove: bool) -> SetupPlan:
             content=_json_text(updated),
             remove_sidecar=True,
             backup_required=existed,
+            original_content=original_content,
         )
 
     if current is not None:
@@ -297,11 +301,13 @@ def _prepare_json(spec: HostSpec, *, remove: bool) -> SetupPlan:
         content=_json_text(updated),
         sidecar_content=_json_text(sidecar),
         backup_required=existed,
+        original_content=original_content,
     )
 
 
 def _prepare_codex(spec: HostSpec, *, remove: bool) -> SetupPlan:
-    content = _read_text(spec.path) if spec.path.exists() else ""
+    original_content = _read_text(spec.path) if spec.path.exists() else ""
+    content = original_content
     block = _expected_toml_block()
     section_exists = _toml_section_pattern().search(content) is not None
     managed_exists = block in content
@@ -321,6 +327,7 @@ def _prepare_codex(spec: HostSpec, *, remove: bool) -> SetupPlan:
             "Remove the Arbitype TOML block owned by this setup command.",
             content=updated,
             backup_required=spec.path.exists(),
+            original_content=original_content,
         )
 
     if section_exists:
@@ -341,6 +348,7 @@ def _prepare_codex(spec: HostSpec, *, remove: bool) -> SetupPlan:
         "Add a marked Codex MCP block with env_vars forwarding only.",
         content=updated,
         backup_required=spec.path.exists(),
+        original_content=original_content,
     )
 
 
@@ -407,12 +415,52 @@ def _format_plan(plan: SetupPlan) -> str:
     return "\n".join(lines)
 
 
+def _format_diff(plan: SetupPlan) -> str:
+    """Render the exact file change without exposing credentials."""
+
+    if plan.action not in {"add", "remove"} or plan.content is None:
+        return ""
+    before = (plan.original_content or "").splitlines(keepends=True)
+    after = plan.content.splitlines(keepends=True)
+    diff = unified_diff(
+        before,
+        after,
+        fromfile=f"{plan.spec.path} (before)",
+        tofile=f"{plan.spec.path} (after)",
+    )
+    rendered = "".join(diff)
+    return rendered if rendered else "(no file content change)\n"
+
+
+def _confirm_apply(*, yes: bool) -> bool:
+    if yes:
+        print("confirmation: --yes supplied; applying planned changes")
+        return True
+    if not (os.sys.stdin.isatty() and os.sys.stdout.isatty()):
+        print(
+            "setup: refusing to write in a non-interactive environment; "
+            "review the diff and pass --yes to apply",
+            file=os.sys.stderr,
+        )
+        return False
+    try:
+        answer = input("Apply these changes? [y/N] ")
+    except EOFError:
+        print("setup: no confirmation received; no files changed", file=os.sys.stderr)
+        return False
+    if answer.strip().lower() not in {"y", "yes"}:
+        print("setup: declined; no files changed")
+        return False
+    return True
+
+
 def run_setup(
     host: str | None = None,
     *,
     detect: bool = False,
     dry_run: bool = False,
     remove: bool = False,
+    yes: bool = False,
     home: Path | None = None,
 ) -> int:
     """Plan and optionally apply safe host configuration changes."""
@@ -443,6 +491,8 @@ def run_setup(
         return 1
 
     print("Arbitype host setup plan")
+    if detect:
+        print(f"detected hosts: {', '.join(selected)}")
     for plan in plans:
         print(_format_plan(plan))
 
@@ -451,8 +501,21 @@ def run_setup(
         print("setup: no files changed because an existing configuration is ambiguous", file=os.sys.stderr)
         return 1
     if dry_run:
+        for plan in plans:
+            diff = _format_diff(plan)
+            if diff:
+                print(f"Unified diff for {plan.spec.name}:")
+                print(diff, end="" if diff.endswith("\n") else "\n")
         print("dry-run: no files changed")
         return 0
+
+    changes = [plan for plan in plans if plan.action in {"add", "remove"}]
+    for plan in changes:
+        diff = _format_diff(plan)
+        print(f"Unified diff for {plan.spec.name}:")
+        print(diff, end="" if diff.endswith("\n") else "\n")
+    if changes and not _confirm_apply(yes=yes):
+        return 2
 
     backups: list[tuple[str, Path]] = []
     try:

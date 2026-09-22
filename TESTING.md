@@ -30,12 +30,29 @@ an accuracy result:
 python3 scripts/run_tool_selection_eval.py --dry-run
 ```
 
+The first real host + Jev selection run is opt-in and records only aggregate
+results, case ids, and reproducibility metadata:
+
+```bash
+TYPESAFE_API_KEY=your-key \
+  python3 scripts/run_tool_selection_live.py \
+    --output evals/reports/tool-selection-YYYY-MM-DD.json
+```
+
+The report's schema-valid-call rate checks deterministic fixture arguments
+against the actual MCP `tools/list` schemas; the dataset does not ask the
+model to generate tool arguments.
+
 The decision-stability evaluation is paid and opt-in. It is never part of
 normal CI:
 
 ```bash
 TYPESAFE_API_KEY=your-key python3 scripts/run_stability_benchmark.py --live --repeats 3
 ```
+
+Stability standard deviation and range are computed per case, across repeated
+invocation means. `global_probability_distribution` is only a pooled
+descriptive distribution and is not a stability metric.
 
 The old PyPI package migration was tested against the public
 `typesafe-mcp==0.5.2` wheel. A same-name metadata-only replacement was not
