@@ -34,7 +34,7 @@ Arbitype is an MCP-native typed decision layer for AI agents, powered by
 [TypeSafe Jev](https://typesafe.ai). It turns probabilistic judgments into
 structured decision primitives that an agent or program can consume directly.
 
-Arbitype 0.7.0 is released on PyPI and the official MCP Registry.
+Arbitype is available on PyPI and the official MCP Registry.
 
 > [!NOTE]
 > Arbitype is an independent open-source project. It is not an official
