@@ -59,6 +59,12 @@ setup(
             "typesafe_codex_mcp.*",
         ]
     ),
+    data_files=[
+        (
+            "share/arbitype/docs",
+            ["docs/HOST_SETUP.md", "docs/CONFIGURATION.md"],
+        ),
+    ],
     exclude_package_data={"": ["__pycache__", "__pycache__/*", "*.py[cod]"]},
     cmdclass={"build_py": BuildPyWithoutBytecode},
     entry_points={
