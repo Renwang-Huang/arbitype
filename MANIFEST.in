@@ -4,6 +4,7 @@ include scripts/official_sdk_smoke.py
 include scripts/release_readiness.py
 include scripts/validate_registry_metadata.py
 include scripts/run_tool_selection_eval.py
+include scripts/run_tool_selection_live.py
 include scripts/run_stability_benchmark.py
 include scripts/validate_eval_datasets.py
 include docs/REGISTRY_MIGRATION.md

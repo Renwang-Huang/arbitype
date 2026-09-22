@@ -132,6 +132,39 @@ def _stats(values: list[float]) -> dict[str, float | None]:
     }
 
 
+def probability_metrics(repeated_values: list[list[float]]) -> dict[str, float | int | None]:
+    """Summarize repeated probabilities for one case.
+
+    A case can produce more than one probability (for example, ``verify`` has
+    one per claim).  We first reduce each invocation to its mean probability,
+    then measure variation across invocations.  This keeps different claims
+    within one invocation from masquerading as instability.  The raw sample
+    count is retained for auditability.
+    """
+
+    call_means = [statistics.mean(values) for values in repeated_values if values]
+    samples = sum(len(values) for values in repeated_values)
+    if not call_means:
+        return {
+            "probability_mean": None,
+            "probability_std": None,
+            "probability_range": None,
+            "mean_absolute_delta": None,
+            "probability_sample_count": samples,
+        }
+    deltas = [
+        abs(current - previous)
+        for previous, current in zip(call_means, call_means[1:])
+    ]
+    return {
+        "probability_mean": round(statistics.mean(call_means), 6),
+        "probability_std": round(statistics.pstdev(call_means), 6),
+        "probability_range": round(max(call_means) - min(call_means), 6),
+        "mean_absolute_delta": round(statistics.mean(deltas), 6) if deltas else None,
+        "probability_sample_count": samples,
+    }
+
+
 def _usage(result: dict[str, Any]) -> dict[str, int]:
     usage = result.get("usage")
     if not isinstance(usage, dict):
@@ -148,6 +181,7 @@ def _usage(result: dict[str, Any]) -> dict[str, int]:
 def run_case(case: dict[str, Any], repeats: int) -> dict[str, Any]:
     signatures: list[Any] = []
     probability_values: list[float] = []
+    repeated_probability_values: list[list[float]] = []
     latencies: list[float] = []
     usage_total = {"input_tokens": 0, "output_tokens": 0}
     for _ in range(repeats):
@@ -155,19 +189,22 @@ def run_case(case: dict[str, Any], repeats: int) -> dict[str, Any]:
         result = call_tool(case["tool"], case["arguments"])
         latencies.append(round((time.monotonic() - started) * 1000, 1))
         signatures.append(decision_signature(case["tool"], result))
-        probability_values.extend(probabilities(result))
+        values = probabilities(result)
+        probability_values.extend(values)
+        repeated_probability_values.append(values)
         usage = _usage(result)
         for key in usage_total:
             usage_total[key] += usage[key]
     first = signatures[0]
     consistent = sum(signature == first for signature in signatures)
+    probability_summary = probability_metrics(repeated_probability_values)
     return {
         "id": case["id"],
         "tool": case["tool"],
         "repeats": repeats,
         "selected_decision": first,
         "decision_consistency": round(consistent / repeats, 6),
-        "probability": _stats(probability_values),
+        **probability_summary,
         "latency_ms": _stats(latencies),
         "usage": usage_total,
         "_probability_samples": probability_values,
@@ -206,6 +243,16 @@ def main(argv: list[str] | None = None) -> int:
         return 1
 
     decision_consistency = [report["decision_consistency"] for report in reports]
+    case_probability_stds = [
+        report["probability_std"]
+        for report in reports
+        if report["probability_std"] is not None
+    ]
+    case_probability_ranges = [
+        report["probability_range"]
+        for report in reports
+        if report["probability_range"] is not None
+    ]
     all_probabilities = [value for report in reports for value in report.pop("_probability_samples")]
     all_latencies = [value for report in reports for value in report.pop("_latency_samples")]
     usage = {
@@ -215,12 +262,26 @@ def main(argv: list[str] | None = None) -> int:
     output = {
         "cases": len(reports),
         "repeats": args.repeats,
-        "selected_decision_consistency": round(statistics.mean(decision_consistency), 6),
-        "probability": _stats(all_probabilities),
+        "mean_decision_consistency": round(statistics.mean(decision_consistency), 6),
+        "mean_case_probability_std": (
+            round(statistics.mean(case_probability_stds), 6) if case_probability_stds else None
+        ),
+        "max_case_probability_std": max(case_probability_stds) if case_probability_stds else None,
+        "mean_case_probability_range": (
+            round(statistics.mean(case_probability_ranges), 6)
+            if case_probability_ranges
+            else None
+        ),
+        "global_probability_distribution": _stats(all_probabilities),
         "latency_ms": _stats(all_latencies),
         "usage": usage,
         "reports": reports,
-        "note": "Model probabilities are signals and may vary even when the selected decision is consistent.",
+        "note": (
+            "Case stability metrics summarize repeated invocations per case. "
+            "global_probability_distribution pools raw probabilities across cases "
+            "and does not represent repeat-call stability. Model probabilities are "
+            "signals and may vary even when the selected decision is consistent."
+        ),
     }
     print(json.dumps(output, ensure_ascii=False, indent=2, sort_keys=True))
     return 0
