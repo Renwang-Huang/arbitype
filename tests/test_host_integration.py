@@ -320,7 +320,7 @@ class CLISurfaceTests(unittest.TestCase):
             check=False,
         )
         self.assertEqual(completed.returncode, 0, completed.stderr)
-        self.assertIn("0.6.0", completed.stdout)
+        self.assertIn("0.7.0", completed.stdout)
 
     def test_arbitype_cli(self):
         self._assert_module_cli("arbitype")

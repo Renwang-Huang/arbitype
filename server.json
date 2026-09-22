@@ -9,12 +9,12 @@
     "id": "1379667659"
   },
   "websiteUrl": "https://github.com/Renwang-Huang/arbitype",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "packages": [
     {
       "registryType": "pypi",
       "identifier": "arbitype",
-      "version": "0.6.0",
+      "version": "0.7.0",
       "runtimeHint": "uvx",
       "transport": {
         "type": "stdio"
