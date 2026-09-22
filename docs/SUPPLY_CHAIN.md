@@ -15,8 +15,11 @@ that small surface.
   publication.
 - CodeQL scans the Python codebase on pushes, pull requests, and a weekly
   schedule.
-- OpenSSF Scorecard runs weekly and on `main`, with SARIF uploaded to GitHub
-  code scanning.
+- OpenSSF Scorecard was evaluated, but its GitHub Action currently cannot run
+  in this repository's runner environment: the upstream GCR action image is
+  denied because billing is required. The failing workflow was not retained
+  as a misleading release check; revisit Scorecard through a verified binary
+  or supported runner path before making it required.
 - Wheel checks reject bytecode and the package declares no runtime
   dependencies.
 
