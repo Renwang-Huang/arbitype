@@ -9,6 +9,8 @@ include scripts/run_stability_benchmark.py
 include scripts/validate_eval_datasets.py
 include docs/REGISTRY_MIGRATION.md
 include docs/OBSERVABILITY.md
+include docs/HOST_SETUP.md
+include docs/CONFIGURATION.md
 recursive-include evals *.jsonl *.md
 recursive-include examples *.json *.md
 recursive-include arbitype *.py
