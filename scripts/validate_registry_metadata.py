@@ -19,6 +19,7 @@ SERVER_NAME = "io.github.Renwang-Huang/arbitype"
 REPOSITORY_URL = "https://github.com/Renwang-Huang/arbitype"
 PACKAGE_NAME = "arbitype"
 README_MARKER = f"<!-- mcp-name: {SERVER_NAME} -->"
+MAX_DESCRIPTION_LENGTH = 100
 
 
 def validate(expected_version: str) -> list[str]:
@@ -35,6 +36,14 @@ def validate(expected_version: str) -> list[str]:
 
     if metadata.get("name") != SERVER_NAME:
         errors.append(f"server.json name must be {SERVER_NAME!r}")
+    description = metadata.get("description")
+    if not isinstance(description, str) or not description.strip():
+        errors.append("server.json description must be a non-empty string")
+    elif len(description) > MAX_DESCRIPTION_LENGTH:
+        errors.append(
+            "server.json description must be at most "
+            f"{MAX_DESCRIPTION_LENGTH} characters; found {len(description)}"
+        )
     if metadata.get("version") != expected_version:
         errors.append(
             f"server.json version must be {expected_version!r}; "
