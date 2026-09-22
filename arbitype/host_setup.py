@@ -374,7 +374,11 @@ def _atomic_write(path: Path, content: str) -> None:
             temporary = stream.name
             stream.write(content)
             stream.flush()
-            os.fchmod(stream.fileno(), mode)
+            fchmod = getattr(os, "fchmod", None)
+            if fchmod is not None:
+                fchmod(stream.fileno(), mode)
+            else:
+                os.chmod(temporary, mode)
         os.replace(temporary, path)
     finally:
         if temporary and os.path.exists(temporary):

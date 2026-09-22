@@ -10,6 +10,7 @@ from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+from arbitype import host_setup  # noqa: E402
 from arbitype.host_setup import run_setup  # noqa: E402
 
 
@@ -88,6 +89,14 @@ class HostSetupTests(unittest.TestCase):
             data = json.loads(path.read_text(encoding="utf-8"))
             self.assertEqual(data["servers"]["arbitype"]["env"]["TYPESAFE_API_KEY"], "${input:typesafe-api-key}")
             self.assertTrue(data["inputs"][0]["password"])
+
+    def test_atomic_write_has_a_windows_permission_fallback(self):
+        with tempfile.TemporaryDirectory() as directory, patch.object(
+            host_setup.os, "fchmod", None, create=True
+        ):
+            home = Path(directory)
+            self.assertEqual(run_setup("cursor", home=home), 0)
+            self.assertTrue((home / ".cursor" / "mcp.json").exists())
 
 
 if __name__ == "__main__":
